@@ -3,6 +3,7 @@ import cors from "cors";
 import { responseHandler } from "./middleware/responseHandler";
 import { errorHandler } from "./middleware/errorHandler";
 import assetPoolRoutes from "./routes/assetPool";
+import testTokenRoutes from "./routes/testToken";
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use((req, res, next) => {
 
 // 路由
 app.use("/api/asset-pool", assetPoolRoutes);
+app.use("/api/test-token", testTokenRoutes);
 
 // 健康检查
 app.get("/health", (req, res) => {
@@ -40,7 +42,8 @@ app.get("/", (req, res) => {
     version: process.env.npm_package_version || "1.0.0",
     endpoints: {
       health: "/health",
-      assetPool: "/api/asset-pool"
+      assetPool: "/api/asset-pool",
+      testToken: "/api/test-token"
     }
   });
 });
@@ -63,6 +66,7 @@ app.listen(PORT, () => {
   console.log(`🚀 Hermes Service API 运行在端口 ${PORT}`);
   console.log(`📊 健康检查: http://localhost:${PORT}/health`);
   console.log(`💰 资金池API: http://localhost:${PORT}/api/asset-pool`);
+  console.log(`🪙 测试代币API: http://localhost:${PORT}/api/test-token`);
 });
 
 export default app;

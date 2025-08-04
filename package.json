@@ -11,6 +11,8 @@
     "deploy:local": "hardhat run scripts/deploy-asset-pool.ts --network localhost",
     "deploy:testnet": "hardhat run scripts/deploy-asset-pool.ts --network arbitrumTestnet",
     "deploy:mainnet": "hardhat run scripts/deploy-asset-pool.ts --network arbitrum",
+    "deploy:tokens": "hardhat run scripts/deploy-test-tokens.ts",
+    "deploy:tokens:local": "hardhat run scripts/deploy-test-tokens.ts --network localhost",
     "start": "ts-node src/api/index.ts",
     "dev": "ts-node-dev --respawn --transpile-only src/api/index.ts",
     "build": "tsc",
