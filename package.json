@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "compile": "hardhat compile"
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy-asset-pool.js",
+    "deploy:local": "hardhat run scripts/deploy-asset-pool.js --network localhost"
   },
   "keywords": [],
   "author": "",
@@ -16,7 +19,7 @@
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
-    "@openzeppelin/contracts": "^5.0.0",
+    "@openzeppelin/contracts": "^5.4.0",
     "@types/express": "^4.17.21",
     "@types/node": "^20.0.0",
     "dotenv": "^16.3.0",
