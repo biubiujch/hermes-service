@@ -17,21 +17,23 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       chainId: 31337,
+      allowUnlimitedContractSize: true,
     },
     localhost: {
       url: "http://127.0.0.1:8545",
       chainId: 31337,
+      allowUnlimitedContractSize: true,
     },
-    arbitrumTestnet: {
-      url: process.env.ARBITRUM_TESTNET_URL || "https://sepolia-rollup.arbitrum.io/rpc",
-      chainId: 421614,
-      accounts: process.env.PRIVATE_KEY && process.env.PRIVATE_KEY.length === 66 ? [process.env.PRIVATE_KEY] : [],
-    },
-    arbitrum: {
-      url: process.env.ARBITRUM_MAINNET_URL || "https://arb1.arbitrum.io/rpc",
-      chainId: 42161,
-      accounts: process.env.PRIVATE_KEY && process.env.PRIVATE_KEY.length === 66 ? [process.env.PRIVATE_KEY] : [],
-    },
+    // 注释掉其他网络，仅用于本地开发测试
+    // 生产环境需要取消注释并配置相应的环境变量
+    // arbitrumTestnet: {
+    //   url: process.env.ARBITRUM_TESTNET_URL || "https://sepolia-rollup.arbitrum.io/rpc",
+    //   chainId: 421614,
+    // },
+    // arbitrum: {
+    //   url: process.env.ARBITRUM_MAINNET_URL || "https://arb1.arbitrum.io/rpc",
+    //   chainId: 42161,
+    // },
   },
   paths: {
     sources: "./contracts",
