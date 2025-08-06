@@ -1,48 +1,48 @@
-# API 文档
+# API Documentation
 
-## 概述
+## Overview
 
-本项目使用装饰器模式构建API，提供了统一的响应格式和错误处理机制。
+This project uses decorator pattern to build APIs, providing unified response format and error handling mechanism.
 
-## 响应格式
+## Response Format
 
-所有API响应都遵循以下统一格式：
+All API responses follow the following unified format:
 
 ```typescript
 interface ApiResponse<T = any> {
-  success: boolean;      // 请求是否成功
-  data?: T;             // 响应数据
-  message?: string;     // 响应消息
-  error?: string;       // 错误信息
-  timestamp: number;    // 时间戳
+  success: boolean;      // Whether the request was successful
+  data?: T;             // Response data
+  message?: string;     // Response message
+  error?: string;       // Error message
+  timestamp: number;    // Timestamp
 }
 ```
 
-### 成功响应示例
+### Success Response Example
 
 ```json
 {
   "success": true,
   "data": {
     "id": 1,
-    "name": "示例数据"
+    "name": "Example Data"
   },
-  "message": "操作成功",
+  "message": "Operation successful",
   "timestamp": 1703123456789
 }
 ```
 
-### 错误响应示例
+### Error Response Example
 
 ```json
 {
   "success": false,
-  "error": "数据不存在",
+  "error": "Data not found",
   "timestamp": 1703123456789
 }
 ```
 
-### 分页响应示例
+### Pagination Response Example
 
 ```json
 {
@@ -56,14 +56,14 @@ interface ApiResponse<T = any> {
       "totalPages": 10
     }
   },
-  "message": "获取数据成功",
+  "message": "Data retrieved successfully",
   "timestamp": 1703123456789
 }
 ```
 
-## 控制器开发指南
+## Controller Development Guide
 
-### 1. 创建控制器
+### 1. Create Controller
 
 ```typescript
 import { Controller, Get, Post, Put, Delete } from "../decorators";
@@ -77,9 +77,9 @@ export class YourController extends BaseController {
     this.setContext(req, res, next);
     
     try {
-      // 你的业务逻辑
+      // Your business logic
       const data = await this.getData();
-      this.success(data, "获取数据成功");
+      this.success(data, "Data retrieved successfully");
     } catch (error) {
       this.error(error as Error);
     }
@@ -87,35 +87,35 @@ export class YourController extends BaseController {
 }
 ```
 
-### 2. 可用的装饰器
+### 2. Available Decorators
 
-- `@Controller(prefix)` - 控制器装饰器，定义路由前缀
-- `@Get(path)` - GET请求装饰器
-- `@Post(path)` - POST请求装饰器
-- `@Put(path)` - PUT请求装饰器
-- `@Delete(path)` - DELETE请求装饰器
-- `@Patch(path)` - PATCH请求装饰器
+- `@Controller(prefix)` - Controller decorator, defines route prefix
+- `@Get(path)` - GET request decorator
+- `@Post(path)` - POST request decorator
+- `@Put(path)` - PUT request decorator
+- `@Delete(path)` - DELETE request decorator
+- `@Patch(path)` - PATCH request decorator
 
-### 3. 基础控制器方法
+### 3. Base Controller Methods
 
-继承 `BaseController` 后，你可以使用以下方法：
+After inheriting `BaseController`, you can use the following methods:
 
 ```typescript
-// 响应方法
+// Response methods
 this.success(data, message, statusCode);
 this.error(error, statusCode);
 this.paginated(data, page, limit, total, message);
 
-// 请求数据获取方法
+// Request data retrieval methods
 this.getQueryParam(key, defaultValue);
 this.getParam(key, defaultValue);
 this.getBody<T>();
 this.getHeader(key);
 ```
 
-### 4. 错误处理
+### 4. Error Handling
 
-系统提供了多种预定义错误类型：
+The system provides various predefined error types:
 
 ```typescript
 import { 
@@ -125,18 +125,18 @@ import {
   ValidationError 
 } from "../error";
 
-// 在控制器中使用
+// Usage in controller
 if (!data) {
-  throw new NotFoundError("数据不存在");
+  throw new NotFoundError("Data not found");
 }
 ```
 
-## 钱包相关API
+## Wallet Related APIs
 
-### 获取应用配置信息
+### Get Application Configuration
 - **GET** `/api/wallet/config`
-- **描述**: 获取应用配置信息，包括手续费收集账户、费率等配置
-- **响应示例**:
+- **Description**: Get application configuration information, including fee collector account, rates, etc.
+- **Response Example**:
 ```json
 {
   "success": true,
@@ -164,10 +164,10 @@ if (!data) {
 }
 ```
 
-### 获取可用网络列表
+### Get Available Networks
 - **GET** `/api/wallet/networks`
-- **描述**: 获取支持的区块链网络列表
-- **响应示例**:
+- **Description**: Get list of supported blockchain networks
+- **Response Example**:
 ```json
 {
   "success": true,
@@ -238,21 +238,21 @@ if (!data) {
 }
 ```
 
-### 获取钱包余额
+### Get Wallet Balance
 - **GET** `/api/wallet/balance`
-- **描述**: 获取指定钱包地址的ETH和USDT余额
-- **请求体**:
-```json
-{
-  "walletAddress": "0x..."
-}
-```
-- **响应示例**:
+- **Description**: Get ETH and USDT balance for specified wallet address
+- **Query Parameters**:
+  - `walletAddress` (required): Wallet address, must be a valid Ethereum address
+- **Request Example**:
+  ```
+  GET /api/wallet/balance?walletAddress=0xe13B97DA8D53CD4456f215526635d0Db35CFB658
+  ```
+- **Response Example**:
 ```json
 {
   "success": true,
   "data": {
-    "walletAddress": "0x...",
+    "walletAddress": "0xe13B97DA8D53CD4456f215526635d0Db35CFB658",
     "balances": {
       "eth": "1.5",
       "usdt": "1000.0"
@@ -260,18 +260,26 @@ if (!data) {
   }
 }
 ```
+- **Error Response Example**:
+```json
+{
+  "success": false,
+  "error": "Invalid wallet address",
+  "timestamp": 1703123456789
+}
+```
 
-### 注入资金到钱包（仅本地测试）
+### Inject Funds to Wallet (Local Test Only)
 - **POST** `/api/wallet/inject-funds`
-- **描述**: 向指定钱包注入USDT资金（仅用于本地测试环境）
-- **请求体**:
+- **Description**: Inject USDT funds to specified wallet (only for local test environment)
+- **Request Body**:
 ```json
 {
   "walletAddress": "0x...",
   "amount": "1000"
 }
 ```
-- **响应示例**:
+- **Response Example**:
 ```json
 {
   "success": false,
@@ -279,89 +287,207 @@ if (!data) {
   "note": "This API should be called from frontend with user wallet signature"
 }
 ```
-- **注意**: 此API在生产环境中被禁用，仅用于本地测试
+- **Note**: This API is disabled in production environment, only for local testing
 
-## 示例API
+## Example APIs
 
-### 示例控制器 API
+### Example Controller APIs
 
-#### 获取示例列表
+#### Get Example List
 - **GET** `/api/example`
-- **查询参数**：
-  - `page` (可选): 页码，默认1
-  - `limit` (可选): 每页数量，默认10
+- **Query Parameters**:
+  - `page` (optional): Page number, default 1
+  - `limit` (optional): Items per page, default 10
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "Example Name",
+      "description": "Example Description"
+    }
+  ],
+  "message": "Example data retrieved successfully",
+  "timestamp": 1703123456789
+}
+```
 
-#### 获取单个示例
+#### Get Single Example
 - **GET** `/api/example/:id`
-- **路径参数**：
-  - `id`: 示例ID
+- **Path Parameters**:
+  - `id`: Example ID
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "Example Name",
+    "description": "Example Description"
+  },
+  "message": "Example data retrieved successfully",
+  "timestamp": 1703123456789
+}
+```
+- **Error Response Example**:
+```json
+{
+  "success": false,
+  "error": "Example data not found",
+  "timestamp": 1703123456789
+}
+```
 
-#### 创建示例
+#### Create Example
 - **POST** `/api/example`
-- **请求体**：
+- **Request Body**:
 ```json
 {
-  "name": "示例名称",
-  "description": "示例描述"
+  "name": "Example Name",
+  "description": "Example Description"
+}
+```
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "Example Name",
+    "description": "Example Description"
+  },
+  "message": "Example data created successfully",
+  "timestamp": 1703123456789
+}
+```
+- **Error Response Example**:
+```json
+{
+  "success": false,
+  "error": "Name and description cannot be empty",
+  "timestamp": 1703123456789
 }
 ```
 
-#### 更新示例
+#### Update Example
 - **PUT** `/api/example/:id`
-- **路径参数**：
-  - `id`: 示例ID
-- **请求体**：
+- **Path Parameters**:
+  - `id`: Example ID
+- **Request Body**:
 ```json
 {
-  "name": "新名称",
-  "description": "新描述"
+  "name": "Updated Name",
+  "description": "Updated Description"
+}
+```
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "Updated Name",
+    "description": "Updated Description"
+  },
+  "message": "Example data updated successfully",
+  "timestamp": 1703123456789
+}
+```
+- **Error Response Example**:
+```json
+{
+  "success": false,
+  "error": "Example data not found",
+  "timestamp": 1703123456789
 }
 ```
 
-#### 删除示例
+#### Delete Example
 - **DELETE** `/api/example/:id`
-- **路径参数**：
-  - `id`: 示例ID
+- **Path Parameters**:
+  - `id`: Example ID
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "Example Name",
+    "description": "Example Description"
+  },
+  "message": "Example data deleted successfully",
+  "timestamp": 1703123456789
+}
+```
+- **Error Response Example**:
+```json
+{
+  "success": false,
+  "error": "Example data not found",
+  "timestamp": 1703123456789
+}
+```
 
-#### 搜索示例
+#### Search Examples
 - **GET** `/api/example/search`
-- **查询参数**：
-  - `q`: 搜索关键词
+- **Query Parameters**:
+  - `q`: Search keyword
+- **Request Example**:
+  ```
+  GET /api/example/search?q=example
+  ```
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "Example Name",
+      "description": "Example Description"
+    }
+  ],
+  "message": "Search completed successfully",
+  "timestamp": 1703123456789
+}
+```
 
-## 注册新控制器
+## Register New Controller
 
-在 `src/api/index.ts` 中注册新的控制器：
+Register new controllers in `src/api/index.ts`:
 
 ```typescript
 import { YourController } from "./controllers/yourController";
 
-// 注册控制器
+// Register controllers
 RouteRegistry.registerControllers([
   ExampleController,
-  YourController  // 添加你的控制器
+  YourController  // Add your controller
 ]);
 ```
 
-## 中间件支持
+## Middleware Support
 
-你可以在装饰器中添加中间件：
+You can add middleware in decorators:
 
 ```typescript
 @Get("/protected", [authMiddleware, validationMiddleware])
 async protectedMethod(req: Request, res: Response, next: NextFunction) {
-  // 这个方法会先经过 authMiddleware 和 validationMiddleware
+  // This method will go through authMiddleware and validationMiddleware first
 }
 ```
 
-## 错误码说明
+## Status Code Reference
 
-- `200` - 成功
-- `201` - 创建成功
-- `400` - 请求参数错误
-- `401` - 未授权
-- `403` - 禁止访问
-- `404` - 资源不存在
-- `409` - 冲突
-- `422` - 验证错误
-- `500` - 服务器内部错误
-- `501` - 功能未实现（如注入资金API在生产环境中的状态）
+- `200` - Success
+- `201` - Created
+- `400` - Bad Request
+- `401` - Unauthorized
+- `403` - Forbidden
+- `404` - Not Found
+- `409` - Conflict
+- `422` - Validation Error
+- `500` - Internal Server Error
+- `501` - Not Implemented (e.g., fund injection API in production environment)

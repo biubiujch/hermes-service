@@ -37,7 +37,7 @@ async function startAPI(): Promise<Express> {
   app.use((req, res) => {
     res.status(404).json({
       success: false,
-      error: "接口不存在",
+      error: "API endpoint not found",
       timestamp: Date.now()
     });
   });

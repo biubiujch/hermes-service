@@ -84,11 +84,11 @@ export class ExampleController extends BaseController {
       const item = this.data.find(d => d.id === id);
       
       if (!item) {
-        this.error("示例数据不存在", 404);
+        this.error("Example data not found", 404);
         return;
       }
       
-      this.success(item, "获取示例数据成功");
+      this.success(item, "Example data retrieved successfully");
     } catch (error) {
       this.error(error as Error);
     }
@@ -106,7 +106,7 @@ export class ExampleController extends BaseController {
       const body = this.getBody<Partial<ExampleData>>();
       
       if (!body.name || !body.description) {
-        this.error("名称和描述不能为空", 400);
+        this.error("Name and description cannot be empty", 400);
         return;
       }
       
@@ -117,7 +117,7 @@ export class ExampleController extends BaseController {
       };
       
       this.data.push(newItem);
-      this.success(newItem, "创建示例数据成功", 201);
+      this.success(newItem, "Example data created successfully", 201);
     } catch (error) {
       this.error(error as Error);
     }
@@ -137,12 +137,12 @@ export class ExampleController extends BaseController {
       
       const index = this.data.findIndex(d => d.id === id);
       if (index === -1) {
-        this.error("示例数据不存在", 404);
+        this.error("Example data not found", 404);
         return;
       }
       
       this.data[index] = { ...this.data[index], ...body };
-      this.success(this.data[index], "更新示例数据成功");
+      this.success(this.data[index], "Example data updated successfully");
     } catch (error) {
       this.error(error as Error);
     }
@@ -161,12 +161,12 @@ export class ExampleController extends BaseController {
       const index = this.data.findIndex(d => d.id === id);
       
       if (index === -1) {
-        this.error("示例数据不存在", 404);
+        this.error("Example data not found", 404);
         return;
       }
       
       const deletedItem = this.data.splice(index, 1)[0];
-      this.success(deletedItem, "删除示例数据成功");
+      this.success(deletedItem, "Example data deleted successfully");
     } catch (error) {
       this.error(error as Error);
     }
