@@ -5,7 +5,7 @@ import router, { RouteRegistry } from "./router";
 import { errorHandler } from "./error";
 
 // 导入控制器
-import { ExampleController } from "./controllers";
+import { ExampleController, WalletController } from "./controllers";
 
 async function startAPI(): Promise<Express> {
   const app = express();
@@ -26,7 +26,8 @@ async function startAPI(): Promise<Express> {
 
   // 注册控制器
   RouteRegistry.registerControllers([
-    ExampleController
+    ExampleController,
+    WalletController
   ]);
 
   // 路由

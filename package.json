@@ -3,9 +3,17 @@
   "version": "1.0.0",
   "description": "",
   "main": "main.ts",
+  "root": ".",
   "scripts": {
     "compile": "hardhat compile",
     "contract:test": "hardhat test",
+    "contract:deploy": "hardhat run scripts/deploy.ts",
+    "contract:deploy:local": "hardhat --network localhost run scripts/deploy.ts",
+    "node:start": "./scripts/node-manager.sh start",
+    "node:stop": "./scripts/node-manager.sh stop",
+    "node:restart": "./scripts/node-manager.sh restart",
+    "node:status": "./scripts/node-manager.sh status",
+    "update-env": "ts-node scripts/update-env.ts",
     "build": "tsc",
     "start": "node dist/main.js",
     "dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register ./src/main.ts"
@@ -15,6 +23,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.13.1",
   "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
     "date-fns": "^4.1.0",
     "express": "4.18.2",
     "typescript": "^5.9.2",

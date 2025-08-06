@@ -26,10 +26,6 @@ const config: HardhatUserConfig = {
     },
     // 注释掉其他网络，仅用于本地开发测试
     // 生产环境需要取消注释并配置相应的环境变量
-    // arbitrumTestnet: {
-    //   url: process.env.ARBITRUM_TESTNET_URL || "https://sepolia-rollup.arbitrum.io/rpc",
-    //   chainId: 421614,
-    // },
     // arbitrum: {
     //   url: process.env.ARBITRUM_MAINNET_URL || "https://arb1.arbitrum.io/rpc",
     //   chainId: 42161,

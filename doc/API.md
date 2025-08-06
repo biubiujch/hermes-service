@@ -131,6 +131,156 @@ if (!data) {
 }
 ```
 
+## 钱包相关API
+
+### 获取应用配置信息
+- **GET** `/api/wallet/config`
+- **描述**: 获取应用配置信息，包括手续费收集账户、费率等配置
+- **响应示例**:
+```json
+{
+  "success": true,
+  "data": {
+    "config": {
+      "feeCollector": {
+        "address": "0x...",
+        "configured": true
+      },
+      "fees": {
+        "tradingRate": 0.001,
+        "withdrawalRate": 0.0005
+      },
+      "network": {
+        "localNodeUrl": "http://127.0.0.1:8545"
+      },
+      "contracts": {
+        "mockToken": "0x...",
+        "vault": "0x...",
+        "membership": "0x..."
+      }
+    },
+    "note": "Configuration information for debugging and setup"
+  }
+}
+```
+
+### 获取可用网络列表
+- **GET** `/api/wallet/networks`
+- **描述**: 获取支持的区块链网络列表
+- **响应示例**:
+```json
+{
+  "success": true,
+  "data": {
+    "networks": [
+      {
+        "id": 31337,
+        "name": "Hardhat Local",
+        "rpcUrl": "http://127.0.0.1:8545",
+        "chainId": "0x7A69",
+        "nativeCurrency": {
+          "name": "Ether",
+          "symbol": "ETH",
+          "decimals": 18
+        },
+        "blockExplorerUrls": [],
+        "isTestnet": true,
+        "isLocal": true
+      },
+      {
+        "id": 42161,
+        "name": "Arbitrum One",
+        "rpcUrl": "https://arb1.arbitrum.io/rpc",
+        "chainId": "0xA4B1",
+        "nativeCurrency": {
+          "name": "Ether",
+          "symbol": "ETH",
+          "decimals": 18
+        },
+        "blockExplorerUrls": ["https://arbiscan.io"],
+        "isTestnet": false,
+        "isLocal": false
+      },
+      {
+        "id": 43114,
+        "name": "Avalanche C-Chain",
+        "rpcUrl": "https://api.avax.network/ext/bc/C/rpc",
+        "chainId": "0xA86A",
+        "nativeCurrency": {
+          "name": "Avalanche",
+          "symbol": "AVAX",
+          "decimals": 18
+        },
+        "blockExplorerUrls": ["https://snowtrace.io"],
+        "isTestnet": false,
+        "isLocal": false
+      },
+      {
+        "id": 3636,
+        "name": "Botanix",
+        "rpcUrl": "https://rpc.btxtestchain.com",
+        "chainId": "0xE34",
+        "nativeCurrency": {
+          "name": "Bitcoin",
+          "symbol": "BTC",
+          "decimals": 18
+        },
+        "blockExplorerUrls": ["https://testnet.botanixscan.com"],
+        "isTestnet": true,
+        "isLocal": false
+      }
+    ],
+    "currentNetwork": {
+      "chainId": 31337,
+      "name": "Hardhat"
+    }
+  }
+}
+```
+
+### 获取钱包余额
+- **GET** `/api/wallet/balance`
+- **描述**: 获取指定钱包地址的ETH和USDT余额
+- **请求体**:
+```json
+{
+  "walletAddress": "0x..."
+}
+```
+- **响应示例**:
+```json
+{
+  "success": true,
+  "data": {
+    "walletAddress": "0x...",
+    "balances": {
+      "eth": "1.5",
+      "usdt": "1000.0"
+    }
+  }
+}
+```
+
+### 注入资金到钱包（仅本地测试）
+- **POST** `/api/wallet/inject-funds`
+- **描述**: 向指定钱包注入USDT资金（仅用于本地测试环境）
+- **请求体**:
+```json
+{
+  "walletAddress": "0x...",
+  "amount": "1000"
+}
+```
+- **响应示例**:
+```json
+{
+  "success": false,
+  "message": "Fund injection is only available in local test environment. In production, use frontend wallet connection.",
+  "note": "This API should be called from frontend with user wallet signature"
+}
+```
+- **注意**: 此API在生产环境中被禁用，仅用于本地测试
+
 ## 示例API
 
 ### 示例控制器 API
@@ -214,3 +364,4 @@ async protectedMethod(req: Request, res: Response, next: NextFunction) {
 - `409` - 冲突
 - `422` - 验证错误
 - `500` - 服务器内部错误
+- `501` - 功能未实现（如注入资金API在生产环境中的状态）
