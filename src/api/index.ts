@@ -34,7 +34,12 @@ async function startAPI(): Promise<Express> {
   app.use(router);
 
   // 404 处理
-  app.use((req, res) => {
+  app.use((req, res, next) => {
+    // 检查响应是否已经发送
+    if (res.headersSent) {
+      return;
+    }
+    
     res.status(404).json({
       success: false,
       error: "API endpoint not found",

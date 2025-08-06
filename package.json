@@ -12,6 +12,7 @@
     "node:start": "./scripts/node-manager.sh start",
     "node:stop": "./scripts/node-manager.sh stop",
     "node:restart": "./scripts/node-manager.sh restart",
+    "node:reset": "./scripts/node-manager.sh reset",
     "node:status": "./scripts/node-manager.sh status",
     "update-env": "ts-node scripts/update-env.ts",
     "build": "tsc",

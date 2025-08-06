@@ -93,6 +93,60 @@ restart_node() {
     start_node
 }
 
+# 重置本地环境（重启节点 + 部署合约 + 更新环境）
+reset_environment() {
+    echo "🔄 重置本地区块链环境..."
+    echo "📋 执行步骤:"
+    echo "  1. 停止本地节点"
+    echo "  2. 启动本地节点"
+    echo "  3. 部署合约"
+    echo "  4. 更新环境变量"
+    echo ""
+    
+    # 1. 停止节点
+    echo "📴 步骤 1: 停止本地节点..."
+    stop_node
+    sleep 2
+    
+    # 2. 启动节点
+    echo "🚀 步骤 2: 启动本地节点..."
+    start_node
+    if [ $? -ne 0 ]; then
+        echo "❌ 节点启动失败，重置流程终止"
+        return 1
+    fi
+    
+    # 3. 等待节点完全就绪
+    echo "⏳ 等待节点就绪..."
+    sleep 5
+    
+    # 4. 部署合约
+    echo "📦 步骤 3: 部署合约..."
+    pnpm contract:deploy
+    if [ $? -ne 0 ]; then
+        echo "❌ 合约部署失败，重置流程终止"
+        return 1
+    fi
+    
+    # 5. 更新环境变量
+    echo "🔧 步骤 4: 更新环境变量..."
+    pnpm update-env update
+    if [ $? -ne 0 ]; then
+        echo "❌ 环境变量更新失败，重置流程终止"
+        return 1
+    fi
+    
+    echo ""
+    echo "✅ 本地环境重置完成！"
+    echo "📋 环境信息:"
+    echo "   - 本地节点: http://127.0.0.1:$PORT"
+    echo "   - 合约地址: deployments/localhost.json"
+    echo "   - 环境配置: .env (已更新)"
+    echo ""
+    echo "💡 下一步: 启动API服务器"
+    echo "   pnpm dev"
+}
+
 # 显示状态
 show_status() {
     echo "📊 本地节点状态:"
@@ -122,6 +176,9 @@ main() {
         "restart")
             restart_node
             ;;
+        "reset")
+            reset_environment
+            ;;
         "status")
             show_status
             ;;
@@ -130,6 +187,7 @@ main() {
             echo "  pnpm run node:start   - 启动本地 Hardhat 节点"
             echo "  pnpm run node:stop    - 停止本地 Hardhat 节点"
             echo "  pnpm run node:restart - 重启本地 Hardhat 节点"
+            echo "  pnpm run node:reset   - 重置本地环境（重启+部署+更新）"
             echo "  pnpm run node:status  - 显示节点状态"
             exit 1
             ;;

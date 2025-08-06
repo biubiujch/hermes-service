@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { logger } from "../../utils/logger";
 import { getRouteMetadata } from "../decorators";
+import { asyncHandler } from "../error";
 
 const router = Router();
 
@@ -24,35 +25,38 @@ export class RouteRegistry {
     const routes = getRouteMetadata(controllerName);
     const prefix = (controller as any).__prefix || "";
     
-    // 注册路由
-    routes.forEach(route => {
-      const fullPath = prefix + route.path;
-      const method = route.method.toLowerCase();
-      const handler = controller[route.propertyKey].bind(controller);
-      
-      switch (method) {
-        case 'get':
-          router.get(fullPath, ...(route.middleware || []), handler);
-          break;
-        case 'post':
-          router.post(fullPath, ...(route.middleware || []), handler);
-          break;
-        case 'put':
-          router.put(fullPath, ...(route.middleware || []), handler);
-          break;
-        case 'delete':
-          router.delete(fullPath, ...(route.middleware || []), handler);
-          break;
-        case 'patch':
-          router.patch(fullPath, ...(route.middleware || []), handler);
-          break;
-        default:
-          logger.error(`Unsupported HTTP method: ${method}`);
-          return;
-      }
-      
-      logger.info(`Registered route: ${method.toUpperCase()} ${fullPath}`);
-    });
+          // 注册路由
+      routes.forEach(route => {
+        const fullPath = prefix + route.path;
+        const method = route.method.toLowerCase();
+        const handler = controller[route.propertyKey].bind(controller);
+        
+        // 使用 asyncHandler 包装异步处理器
+        const wrappedHandler = asyncHandler(handler);
+        
+        switch (method) {
+          case 'get':
+            router.get(fullPath, ...(route.middleware || []), wrappedHandler);
+            break;
+          case 'post':
+            router.post(fullPath, ...(route.middleware || []), wrappedHandler);
+            break;
+          case 'put':
+            router.put(fullPath, ...(route.middleware || []), wrappedHandler);
+            break;
+          case 'delete':
+            router.delete(fullPath, ...(route.middleware || []), wrappedHandler);
+            break;
+          case 'patch':
+            router.patch(fullPath, ...(route.middleware || []), wrappedHandler);
+            break;
+          default:
+            logger.error(`Unsupported HTTP method: ${method}`);
+            return;
+        }
+        
+        logger.info(`Registered route: ${method.toUpperCase()} ${fullPath}`);
+      });
   }
 
   /**
@@ -88,21 +92,24 @@ export function registerRoute(
 ): void {
   const methodLower = method.toLowerCase();
   
+  // 使用 asyncHandler 包装异步处理器
+  const wrappedHandler = asyncHandler(handler);
+  
   switch (methodLower) {
     case 'get':
-      router.get(path, ...middleware, handler);
+      router.get(path, ...middleware, wrappedHandler);
       break;
     case 'post':
-      router.post(path, ...middleware, handler);
+      router.post(path, ...middleware, wrappedHandler);
       break;
     case 'put':
-      router.put(path, ...middleware, handler);
+      router.put(path, ...middleware, wrappedHandler);
       break;
     case 'delete':
-      router.delete(path, ...middleware, handler);
+      router.delete(path, ...middleware, wrappedHandler);
       break;
     case 'patch':
-      router.patch(path, ...middleware, handler);
+      router.patch(path, ...middleware, wrappedHandler);
       break;
     default:
       logger.error(`Unsupported HTTP method: ${method}`);

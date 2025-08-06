@@ -35,6 +35,9 @@ export class WalletController extends BaseController {
       if (mockTokenAddress) {
         this.mockTokenAddress = mockTokenAddress;
         this.mockToken = new ethers.Contract(mockTokenAddress, MOCK_TOKEN_ABI, this.provider);
+        console.log(`MockToken initialized with address: ${mockTokenAddress}`);
+      } else {
+        console.warn('MockToken address not configured - set MOCK_TOKEN_ADDRESS in .env file');
       }
     } catch (error) {
       console.error('Failed to initialize MockToken:', error);
@@ -118,6 +121,7 @@ export class WalletController extends BaseController {
 
       // 获取USDT余额（如果MockToken已初始化）
       let usdtBalance = '0';
+      let usdtError = null;
       if (this.mockToken) {
         try {
           const usdtBalanceRaw = await this.mockToken.balanceOf(walletAddress);
@@ -125,7 +129,10 @@ export class WalletController extends BaseController {
           usdtBalance = ethers.formatUnits(usdtBalanceRaw, decimals);
         } catch (error) {
           console.error('Failed to get USDT balance:', error);
+          usdtError = 'Failed to get USDT balance - contract may not be deployed or address is invalid';
         }
+      } else {
+        usdtError = 'MockToken contract not initialized - check MOCK_TOKEN_ADDRESS configuration';
       }
 
       this.success({
@@ -133,7 +140,8 @@ export class WalletController extends BaseController {
         balances: {
           eth: ethBalanceFormatted,
           usdt: usdtBalance
-        }
+        },
+        errors: usdtError ? { usdt: usdtError } : undefined
       });
     } catch (error) {
       this.error(error as Error);
@@ -151,32 +159,64 @@ export class WalletController extends BaseController {
     
     try {
       const body = this.getBody<{ walletAddress: string; amount?: string }>();
-      const { walletAddress, amount = '1000' } = body;
+      const { walletAddress, amount = '10' } = body;
 
       if (!walletAddress || !ethers.isAddress(walletAddress)) {
         this.error("Invalid wallet address", 400);
         return;
       }
 
-      // 检查当前USDT余额
-      if (this.mockToken) {
-        try {
-          const currentBalance = await this.mockToken.balanceOf(walletAddress);
-          const decimals = await this.mockToken.decimals();
-          const currentBalanceFormatted = parseFloat(ethers.formatUnits(currentBalance, decimals));
-          
-          if (currentBalanceFormatted >= 1000) {
-            this.error("User already has sufficient funds (>= 1000 USDT)", 400);
-            return;
-          }
-        } catch (error) {
-          console.error('Failed to check current balance:', error);
-        }
+      // 验证金额
+      const amountNumber = parseFloat(amount);
+      if (isNaN(amountNumber) || amountNumber <= 0) {
+        this.error("Invalid amount - must be a positive number", 400);
+        return;
       }
 
-      // 注意：这个功能仅用于本地测试
-      // 在生产环境中，应该通过前端wagmi连接钱包来执行交易
-      this.error("Fund injection is only available in local test environment. In production, use frontend wallet connection.", 501);
+      // 检查MockToken是否已初始化
+      if (!this.mockToken) {
+        this.error("MockToken contract not initialized - check MOCK_TOKEN_ADDRESS configuration", 500);
+        return;
+      }
+
+      try {
+        // 获取合约的decimals
+        const decimals = await this.mockToken.decimals();
+        
+        // 将金额转换为合约单位
+        const amountInWei = ethers.parseUnits(amount, decimals);
+        
+        // 获取部署者账户（用于mint操作）
+        const deployerAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // Hardhat默认账户
+        
+        // 创建部署者签名者
+        const deployerSigner = await this.provider.getSigner(deployerAddress);
+        
+        // 使用部署者账户连接合约
+        const mockTokenWithSigner = this.mockToken.connect(deployerSigner) as any;
+        
+        // 执行mint操作
+        const tx = await mockTokenWithSigner.mint(walletAddress, amountInWei);
+        
+        // 等待交易确认
+        await tx.wait();
+        
+        // 获取新的余额
+        const newBalance = await this.mockToken.balanceOf(walletAddress);
+        const newBalanceFormatted = ethers.formatUnits(newBalance, decimals);
+        
+        this.success({
+          walletAddress,
+          injectedAmount: amount,
+          newBalance: newBalanceFormatted,
+          transactionHash: tx.hash,
+          message: `Successfully injected ${amount} USDT to wallet`
+        });
+        
+      } catch (error) {
+        console.error('Failed to inject funds:', error);
+        this.error(`Failed to inject funds: ${error instanceof Error ? error.message : 'Unknown error'}`, 500);
+      }
     } catch (error) {
       this.error(error as Error);
     }

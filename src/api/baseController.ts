@@ -82,7 +82,8 @@ export abstract class BaseController {
     try {
       return await fn();
     } catch (error) {
-      this.error(error as Error);
+      // 只记录错误，不发送响应，让上层处理
+      console.error('Error in wrapAsync:', error);
       throw error;
     }
   }
