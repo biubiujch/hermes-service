@@ -359,13 +359,16 @@ if (!data) {
 
 ### Create Pool
 - **POST** `/api/vault/pools`
-- **Description**: Create a new pool with initial funds
+- **Description**: Create a new pool with initial funds (requires signature verification)
 - **Request Body**:
 ```json
 {
   "walletAddress": "0x...",
   "initialAmount": "1.0",
-  "tokenAddress": "0x..." // Optional, defaults to ETH
+  "tokenAddress": "0x...", // Optional, defaults to ETH
+  "nonce": 0,
+  "deadline": 1234567890,
+  "signature": "0x..."
 }
 ```
 - **Response Example**:
@@ -384,13 +387,16 @@ if (!data) {
 
 ### Delete Pool
 - **DELETE** `/api/vault/pools/:poolId`
-- **Description**: Delete a pool and withdraw all funds
+- **Description**: Delete a pool and withdraw all funds (requires signature verification)
 - **Path Parameters**:
   - `poolId`: Pool ID
 - **Request Body**:
 ```json
 {
-  "walletAddress": "0x..."
+  "walletAddress": "0x...",
+  "nonce": 1,
+  "deadline": 1234567890,
+  "signature": "0x..."
 }
 ```
 - **Response Example**:
@@ -408,13 +414,16 @@ if (!data) {
 
 ### Merge Pools
 - **PUT** `/api/vault/pools/merge`
-- **Description**: Merge two pools owned by the same user
+- **Description**: Merge two pools owned by the same user (requires signature verification)
 - **Request Body**:
 ```json
 {
   "walletAddress": "0x...",
   "targetPoolId": 1,
-  "sourcePoolId": 2
+  "sourcePoolId": 2,
+  "nonce": 2,
+  "deadline": 1234567890,
+  "signature": "0x..."
 }
 ```
 - **Response Example**:
@@ -433,7 +442,7 @@ if (!data) {
 
 ### Deposit Funds
 - **POST** `/api/vault/pools/:poolId/deposit`
-- **Description**: Deposit funds into a pool
+- **Description**: Deposit funds into a pool (requires signature verification)
 - **Path Parameters**:
   - `poolId`: Pool ID
 - **Request Body**:
@@ -441,7 +450,10 @@ if (!data) {
 {
   "walletAddress": "0x...",
   "amount": "0.5",
-  "tokenAddress": "0x..." // Optional, defaults to ETH
+  "tokenAddress": "0x...", // Optional, defaults to ETH
+  "nonce": 3,
+  "deadline": 1234567890,
+  "signature": "0x..."
 }
 ```
 - **Response Example**:
@@ -461,7 +473,7 @@ if (!data) {
 
 ### Withdraw Funds
 - **POST** `/api/vault/pools/:poolId/withdraw`
-- **Description**: Withdraw funds from a pool (with fee deduction)
+- **Description**: Withdraw funds from a pool with fee deduction (requires signature verification)
 - **Path Parameters**:
   - `poolId`: Pool ID
 - **Request Body**:
@@ -469,7 +481,10 @@ if (!data) {
 {
   "walletAddress": "0x...",
   "amount": "0.5",
-  "tokenAddress": "0x..." // Optional, defaults to ETH
+  "tokenAddress": "0x...", // Optional, defaults to ETH
+  "nonce": 4,
+  "deadline": 1234567890,
+  "signature": "0x..."
 }
 ```
 - **Response Example**:
@@ -505,6 +520,139 @@ if (!data) {
     "needsApproval": false
   }
 }
+```
+
+## Signature Verification APIs
+
+### Get User Nonce
+- **GET** `/api/vault/nonce?walletAddress=0x...`
+- **Description**: Get current nonce for a wallet address (used for signature verification)
+- **Query Parameters**:
+  - `walletAddress` (required): Wallet address
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "walletAddress": "0x...",
+    "nonce": 5
+  }
+}
+```
+
+### Get Domain Separator
+- **GET** `/api/vault/domain-separator`
+- **Description**: Get EIP-712 domain separator for signature verification
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "domainSeparator": "0x...",
+    "message": "Domain separator for EIP-712 signature verification"
+  }
+}
+```
+
+### Verify Signature
+- **POST** `/api/vault/verify-signature`
+- **Description**: Verify a message signature
+- **Request Body**:
+```json
+{
+  "walletAddress": "0x...",
+  "message": "Hello World",
+  "signature": "0x..."
+}
+```
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "walletAddress": "0x...",
+    "message": "Hello World",
+    "signature": "0x...",
+    "isValid": true,
+    "recoveredAddress": "0x...",
+    "messageHash": "0x..."
+  }
+}
+```
+
+
+
+## Frontend Integration Guide
+
+### Signature Flow
+
+1. **Get Nonce**: Call `/api/vault/nonce?walletAddress=0x...` to get current nonce
+2. **Get Domain Separator**: Call `/api/vault/domain-separator` to get EIP-712 domain separator
+3. **Construct Message**: Create EIP-712 typed data structure
+4. **Sign Message**: Use wallet to sign the message
+5. **Submit Transaction**: Call the appropriate API with signature
+
+### Example Frontend Code
+
+```typescript
+import { ethers } from 'ethers';
+
+// 1. Get nonce
+const nonceResponse = await fetch(`/api/vault/nonce?walletAddress=${walletAddress}`);
+const { nonce } = await nonceResponse.json();
+
+// 2. Get domain separator
+const domainResponse = await fetch('/api/vault/domain-separator');
+const { domainSeparator } = await domainResponse.json();
+
+// 3. Construct EIP-712 message
+const deadline = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
+const message = {
+  types: {
+    CreatePool: [
+      { name: 'walletAddress', type: 'address' },
+      { name: 'initialAmount', type: 'uint256' },
+      { name: 'tokenAddress', type: 'address' },
+      { name: 'nonce', type: 'uint256' },
+      { name: 'deadline', type: 'uint256' }
+    ]
+  },
+  primaryType: 'CreatePool',
+  domain: {
+    name: 'Hermora Vault',
+    version: '1',
+    chainId: chainId,
+    verifyingContract: vaultAddress
+  },
+  message: {
+    walletAddress: walletAddress,
+    initialAmount: ethers.parseEther('1.0'),
+    tokenAddress: ethers.ZeroAddress,
+    nonce: nonce,
+    deadline: deadline
+  }
+};
+
+// 4. Sign message
+const signature = await signer._signTypedData(
+  message.domain,
+  { CreatePool: message.types.CreatePool },
+  message.message
+);
+
+// 5. Submit transaction
+const response = await fetch('/api/vault/pools', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    walletAddress,
+    initialAmount: '1.0',
+    tokenAddress: ethers.ZeroAddress,
+    nonce,
+    deadline,
+    signature
+  })
+});
 ```
 
 ## Example APIs
