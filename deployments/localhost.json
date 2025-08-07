@@ -1,8 +1,10 @@
 {
   "network": "localhost",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "feeCollector": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
   "contracts": {
-    "mockToken": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+    "mockToken": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+    "vault": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"
   },
-  "timestamp": "2025-08-07T01:33:04.335Z"
+  "timestamp": "2025-08-07T08:25:12.515Z"
 }

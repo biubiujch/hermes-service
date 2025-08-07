@@ -23,18 +23,21 @@
 用户资金池管理合约。
 
 **功能特性：**
-- 用户资金充值/提现
-- 手续费自动收取
-- 支持多种代币
-- 策略执行器资金调用接口
+- 用户可创建多个资金池（数量可配置）
+- 支持ETH和ERC20代币
+- 资金池创建、删除、合并
+- 资金存取款（自动手续费收取）
+- 边缘情况处理（资金不足支付gas费用）
 - 管理员配置功能
 
 **核心方法：**
-- `deposit(token, amount)`: 充值资金
-- `withdraw(token, amount)`: 提现资金
-- `getBalance(user)`: 查询用户余额
-- `deductForStrategy(user, amount)`: 策略扣除资金
-- `addForStrategy(user, amount)`: 策略添加资金
+- `createPool(initialAmount)`: 创建资金池
+- `deletePool(poolId)`: 删除资金池
+- `mergePools(targetPoolId, sourcePoolId)`: 合并资金池
+- `deposit(poolId, token, amount)`: 存入资金
+- `withdraw(poolId, token, amount)`: 取出资金
+- `getUserPools(user)`: 获取用户资金池列表
+- `getPool(poolId)`: 获取资金池详情
 
 ### 3. Membership.sol
 会员订阅与权限管理合约。
@@ -89,6 +92,9 @@ MOCK_TOKEN_ADDRESS=0x...
 VAULT_ADDRESS=0x...
 MEMBERSHIP_ADDRESS=0x...
 
+# 手续费收集账户
+FEE_COLLECTOR_ADDRESS=0x...
+
 # 部署者私钥（用于注入资金等操作）
 DEPLOYER_PRIVATE_KEY=0x...
 ```
@@ -117,7 +123,7 @@ networks: {
 
 ### 测试结构
 - `test/MockToken.test.ts`: MockToken合约测试
-- `test/Vault.test.ts`: Vault合约测试
+- `test/Vault.test.ts`: Vault合约测试（资金池功能测试）
 - `test/Membership.test.ts`: Membership合约测试
 
 ### 运行测试

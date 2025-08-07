@@ -289,6 +289,224 @@ if (!data) {
 ```
 - **Note**: This API is disabled in production environment, only for local testing
 
+## Vault (资金池) Related APIs
+
+### Get Vault Configuration
+- **GET** `/api/vault/config`
+- **Description**: Get vault configuration information including max pools per user, fee rates, etc.
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "maxPoolsPerUser": 10,
+    "minPoolBalance": "0.001",
+    "feeRate": 5,
+    "feeCollector": "0x...",
+    "supportedTokens": {
+      "mockToken": "0x...",
+      "isSupported": true
+    }
+  }
+}
+```
+
+### Get User Pools
+- **GET** `/api/vault/pools?walletAddress=0x...`
+- **Description**: Get all pools owned by a specific wallet address
+- **Query Parameters**:
+  - `walletAddress` (required): Wallet address
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "walletAddress": "0x...",
+    "poolCount": 2,
+    "pools": [
+      {
+        "id": 1,
+        "owner": "0x...",
+        "totalBalance": "1.5",
+        "isActive": true,
+        "createdAt": 1703123456,
+        "lastActivityAt": 1703123456
+      }
+    ]
+  }
+}
+```
+
+### Get Pool Details
+- **GET** `/api/vault/pools/:poolId`
+- **Description**: Get detailed information about a specific pool
+- **Path Parameters**:
+  - `poolId`: Pool ID
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "owner": "0x...",
+    "totalBalance": "1.5",
+    "isActive": true,
+    "createdAt": 1703123456,
+    "lastActivityAt": 1703123456
+  }
+}
+```
+
+### Create Pool
+- **POST** `/api/vault/pools`
+- **Description**: Create a new pool with initial funds
+- **Request Body**:
+```json
+{
+  "walletAddress": "0x...",
+  "initialAmount": "1.0",
+  "tokenAddress": "0x..." // Optional, defaults to ETH
+}
+```
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "poolId": 1,
+    "walletAddress": "0x...",
+    "initialAmount": "1.0",
+    "transactionHash": "0x...",
+    "message": "Pool created successfully"
+  }
+}
+```
+
+### Delete Pool
+- **DELETE** `/api/vault/pools/:poolId`
+- **Description**: Delete a pool and withdraw all funds
+- **Path Parameters**:
+  - `poolId`: Pool ID
+- **Request Body**:
+```json
+{
+  "walletAddress": "0x..."
+}
+```
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "poolId": 1,
+    "walletAddress": "0x...",
+    "transactionHash": "0x...",
+    "message": "Pool deleted successfully"
+  }
+}
+```
+
+### Merge Pools
+- **PUT** `/api/vault/pools/merge`
+- **Description**: Merge two pools owned by the same user
+- **Request Body**:
+```json
+{
+  "walletAddress": "0x...",
+  "targetPoolId": 1,
+  "sourcePoolId": 2
+}
+```
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "targetPoolId": 1,
+    "sourcePoolId": 2,
+    "walletAddress": "0x...",
+    "transactionHash": "0x...",
+    "message": "Pools merged successfully"
+  }
+}
+```
+
+### Deposit Funds
+- **POST** `/api/vault/pools/:poolId/deposit`
+- **Description**: Deposit funds into a pool
+- **Path Parameters**:
+  - `poolId`: Pool ID
+- **Request Body**:
+```json
+{
+  "walletAddress": "0x...",
+  "amount": "0.5",
+  "tokenAddress": "0x..." // Optional, defaults to ETH
+}
+```
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "poolId": 1,
+    "walletAddress": "0x...",
+    "amount": "0.5",
+    "tokenAddress": "0x0000000000000000000000000000000000000000",
+    "transactionHash": "0x...",
+    "message": "Deposit successful"
+  }
+}
+```
+
+### Withdraw Funds
+- **POST** `/api/vault/pools/:poolId/withdraw`
+- **Description**: Withdraw funds from a pool (with fee deduction)
+- **Path Parameters**:
+  - `poolId`: Pool ID
+- **Request Body**:
+```json
+{
+  "walletAddress": "0x...",
+  "amount": "0.5",
+  "tokenAddress": "0x..." // Optional, defaults to ETH
+}
+```
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "poolId": 1,
+    "walletAddress": "0x...",
+    "amount": "0.5",
+    "tokenAddress": "0x0000000000000000000000000000000000000000",
+    "transactionHash": "0x...",
+    "message": "Withdrawal successful"
+  }
+}
+```
+
+### Get Token Approval Status
+- **GET** `/api/vault/approval-status?walletAddress=0x...&tokenAddress=0x...`
+- **Description**: Check token approval status for vault operations
+- **Query Parameters**:
+  - `walletAddress` (required): Wallet address
+  - `tokenAddress` (optional): Token address
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "walletAddress": "0x...",
+    "tokenAddress": "0x...",
+    "balance": "1000.0",
+    "allowance": "500.0",
+    "needsApproval": false
+  }
+}
+```
+
 ## Example APIs
 
 ### Example Controller APIs
