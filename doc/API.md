@@ -1,8 +1,31 @@
-# API Documentation
+# API 文档
 
-## Overview
+## 概述
 
-This project uses decorator pattern to build APIs, providing unified response format and error handling mechanism.
+本项目采用装饰器模式构建 API，提供统一的响应格式和错误处理机制。支持 EIP-712 签名验证，确保区块链交易的安全性。
+
+## 架构设计
+
+### 控制器层次结构
+
+```
+BaseController (基础控制器)
+├── 请求上下文管理
+├── 响应方法 (success, error, paginated)
+├── 参数获取 (getParam, getQueryParam, getBody)
+└── 错误处理
+
+ContractController (合约控制器基类)
+├── 继承 BaseController
+├── Provider 和 Signer 管理
+├── 合约实例创建
+└── 地址验证
+
+具体控制器
+├── VaultController (继承 ContractController)
+├── WalletController (继承 ContractController)
+└── ExampleController (继承 BaseController)
+```
 
 ## Response Format
 
@@ -856,3 +879,160 @@ async protectedMethod(req: Request, res: Response, next: NextFunction) {
 - `422` - Validation Error
 - `500` - Internal Server Error
 - `501` - Not Implemented (e.g., fund injection API in production environment)
+
+## 最新 API 接口
+
+### 资金池管理接口 (VaultController)
+
+#### 获取配置信息
+```http
+GET /api/vault/config
+```
+
+#### 获取用户资金池列表
+```http
+GET /api/vault/pools/user/:walletAddress
+```
+
+#### 获取资金池详情
+```http
+GET /api/vault/pools/:poolId
+```
+
+#### 创建资金池
+```http
+POST /api/vault/pools
+```
+
+**请求体：**
+```json
+{
+  "walletAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "initialAmount": "0.1",
+  "tokenAddress": "0x0000000000000000000000000000000000000000",
+  "nonce": 7,
+  "deadline": 1754593638,
+  "signature": "0x9b5b67dc4eda43d58249e8ca0c3d08fb7f18abd97781b59ccbe958f363fe0c4a45577011498d9b497f37bccee90924c7a34a13852129c0d083b52889ea7ed8c61c"
+}
+```
+
+#### 存款到资金池
+```http
+POST /api/vault/pools/:poolId/deposit
+```
+
+**请求体：**
+```json
+{
+  "walletAddress": "0xe13B97DA8D53CD4456f215526635d0Db35CFB658",
+  "amount": "10",
+  "tokenAddress": "0x0000000000000000000000000000000000000000",
+  "nonce": 1,
+  "deadline": 1754593339,
+  "signature": "0x5262072af9b2ff90ee238cd63c3af5021ef97d25f3e082e2f4028743d20f48327f560fa7f1436672d4759981d84ec5e11f0d8482c8443281ede38f6801375cb41c"
+}
+```
+
+#### 从资金池提款
+```http
+POST /api/vault/pools/:poolId/withdraw
+```
+
+#### 删除资金池
+```http
+DELETE /api/vault/pools/:poolId
+```
+
+#### 合并资金池
+```http
+POST /api/vault/pools/merge
+```
+
+#### 获取用户 Nonce
+```http
+GET /api/vault/nonce/:walletAddress
+```
+
+#### 获取 Domain Separator
+```http
+GET /api/vault/domain-separator
+```
+
+### 钱包管理接口 (WalletController)
+
+#### 获取钱包配置
+```http
+GET /api/wallet/config
+```
+
+#### 获取支持的网络
+```http
+GET /api/wallet/networks
+```
+
+#### 获取钱包余额
+```http
+GET /api/wallet/balance?walletAddress=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+```
+
+#### 注入测试资金
+```http
+POST /api/wallet/inject-funds
+```
+
+## EIP-712 签名
+
+### Domain 定义
+```typescript
+const domain = {
+  name: 'Hermora Vault',
+  version: '1',
+  chainId: 31337, // Hardhat 本地网络
+  verifyingContract: VAULT_ADDRESS
+};
+```
+
+### 签名生成示例
+```typescript
+import { ethers } from "ethers";
+
+const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+const message = {
+  walletAddress: WALLET_ADDRESS,
+  initialAmount: ethers.parseEther("0.1"),
+  tokenAddress: ethers.ZeroAddress,
+  nonce: 7,
+  deadline: Math.floor(Date.now() / 1000) + 3600
+};
+
+const signature = await wallet.signTypedData(domain, CREATE_POOL_TYPE, message);
+```
+
+## 错误处理
+
+### 常见错误
+- `InvalidSignature()` - 签名验证失败
+- `InvalidNonce()` - Nonce 不匹配
+- `ExpiredSignature()` - 签名已过期
+- `PoolNotFound()` - 资金池不存在
+- `PoolNotOwned()` - 资金池不属于该用户
+- `MaxPoolsReached()` - 达到最大资金池数量
+- `InsufficientBalance()` - 余额不足
+
+## 性能优化
+
+1. **异步初始化**: 合约实例异步初始化，避免阻塞
+2. **超时保护**: 请求和交易级别的超时保护
+3. **重复请求处理**: 防止重复的写操作
+4. **错误缓存**: 统一的错误处理和响应格式
+5. **日志优化**: 减少不必要的日志输出
+
+## 更新日志
+
+### v1.0.0 (最新)
+- 修复了合约 Signer 初始化时序问题
+- 修复了 EIP-712 Domain 名称不匹配问题
+- 简化了架构，移除了重复的处理逻辑
+- 添加了请求超时保护
+- 优化了错误处理流程
+- 解决了前端接口 pending 问题
