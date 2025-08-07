@@ -312,9 +312,9 @@ if (!data) {
 ```
 
 ### Get User Pools
-- **GET** `/api/vault/pools?walletAddress=0x...`
+- **GET** `/api/vault/pools/user/:walletAddress`
 - **Description**: Get all pools owned by a specific wallet address
-- **Query Parameters**:
+- **Path Parameters**:
   - `walletAddress` (required): Wallet address
 - **Response Example**:
 ```json
@@ -322,7 +322,7 @@ if (!data) {
   "success": true,
   "data": {
     "walletAddress": "0x...",
-    "poolCount": 2,
+    "totalPools": 2,
     "pools": [
       {
         "id": 1,
@@ -503,11 +503,11 @@ if (!data) {
 ```
 
 ### Get Token Approval Status
-- **GET** `/api/vault/approval-status?walletAddress=0x...&tokenAddress=0x...`
+- **GET** `/api/vault/token/approval/:walletAddress/:tokenAddress`
 - **Description**: Check token approval status for vault operations
-- **Query Parameters**:
+- **Path Parameters**:
   - `walletAddress` (required): Wallet address
-  - `tokenAddress` (optional): Token address
+  - `tokenAddress` (required): Token address
 - **Response Example**:
 ```json
 {
@@ -521,13 +521,14 @@ if (!data) {
   }
 }
 ```
+- **Note**: `needsApproval` is `true` when `allowance` is 0, indicating that the vault contract needs approval to spend tokens on behalf of the user.
 
 ## Signature Verification APIs
 
 ### Get User Nonce
-- **GET** `/api/vault/nonce?walletAddress=0x...`
+- **GET** `/api/vault/nonce/:walletAddress`
 - **Description**: Get current nonce for a wallet address (used for signature verification)
-- **Query Parameters**:
+- **Path Parameters**:
   - `walletAddress` (required): Wallet address
 - **Response Example**:
 ```json
@@ -548,8 +549,7 @@ if (!data) {
 {
   "success": true,
   "data": {
-    "domainSeparator": "0x...",
-    "message": "Domain separator for EIP-712 signature verification"
+    "domainSeparator": "0x..."
   }
 }
 ```
@@ -574,8 +574,7 @@ if (!data) {
     "message": "Hello World",
     "signature": "0x...",
     "isValid": true,
-    "recoveredAddress": "0x...",
-    "messageHash": "0x..."
+    "recoveredAddress": "0x..."
   }
 }
 ```
@@ -598,7 +597,7 @@ if (!data) {
 import { ethers } from 'ethers';
 
 // 1. Get nonce
-const nonceResponse = await fetch(`/api/vault/nonce?walletAddress=${walletAddress}`);
+const nonceResponse = await fetch(`/api/vault/nonce/${walletAddress}`);
 const { nonce } = await nonceResponse.json();
 
 // 2. Get domain separator
