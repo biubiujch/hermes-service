@@ -497,9 +497,10 @@ export class VaultController extends BaseController {
 
         tx = await this.vault.deposit(walletAddress, poolIdNumber, amountInWei, tokenAddress, nonce, deadline, signature);
       } else {
-        // ETH存款
+        // ETH存款 - 使用 amount 作为签名验证，但合约调用时传递 0
         const amountInWei = ethers.parseEther(amount);
-        tx = await this.vault.deposit(walletAddress, poolIdNumber, 0, ethers.ZeroAddress, nonce, deadline, signature, { value: amountInWei });
+        // 注意：这里我们传递 amountInWei 而不是 0，因为签名是基于 amount 生成的
+        tx = await this.vault.deposit(walletAddress, poolIdNumber, amountInWei, ethers.ZeroAddress, nonce, deadline, signature, { value: amountInWei });
       }
 
       await tx.wait();
