@@ -28,6 +28,9 @@ export class ResponseHandler {
    */
   static error(res: Response, error: string | Error, statusCode: number = 500): void {
     // 检查响应是否已经发送
+    if (res.headersSent) {
+      return;
+    }
 
     const response: ApiResponse = {
       success: false,

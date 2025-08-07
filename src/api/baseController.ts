@@ -31,7 +31,10 @@ export abstract class BaseController {
    * 错误响应
    */
   protected error(error: string | Error, statusCode?: number): void {
-    ResponseHandler.error(this.res, error, statusCode);
+    // 检查响应是否已经发送，避免重复发送响应
+    if (!this.res.headersSent) {
+      ResponseHandler.error(this.res, error, statusCode);
+    }
   }
 
   /**

@@ -59,6 +59,8 @@ export class WalletController extends BaseController {
       });
     } catch (error) {
       this.error(error as Error);
+      // 不要抛出错误，避免被错误处理中间件重复处理
+      return;
     }
   }
 
@@ -80,6 +82,8 @@ export class WalletController extends BaseController {
       });
     } catch (error) {
       this.error(error as Error);
+      // 不要抛出错误，避免被错误处理中间件重复处理
+      return;
     }
   }
 
@@ -145,6 +149,8 @@ export class WalletController extends BaseController {
       });
     } catch (error) {
       this.error(error as Error);
+      // 不要抛出错误，避免被错误处理中间件重复处理
+      return;
     }
   }
 
@@ -219,6 +225,8 @@ export class WalletController extends BaseController {
       }
     } catch (error) {
       this.error(error as Error);
+      // 不要抛出错误，避免被错误处理中间件重复处理
+      return;
     }
   }
 } 
