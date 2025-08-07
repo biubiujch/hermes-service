@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { ResponseHandler } from "./response";
-import { asyncHandler } from "./error";
+import { ResponseHandler } from "./utils/responseHandler";
+import { asyncHandler } from "./middleware/errorHandler";
 
 /**
  * 基础控制器类

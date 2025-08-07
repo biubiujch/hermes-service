@@ -1,6 +1,13 @@
-// 导出核心功能
-export { startAPI } from "./index";
-export { ResponseHandler, type ApiResponse } from "./response";
+// Controllers
+export { ExampleController } from "./controllers/exampleController";
+export { WalletController } from "./controllers/walletController";
+
+// Base classes and utilities
+export { BaseController } from "./baseController";
+export { ResponseHandler } from "./utils/responseHandler";
+export { ApiResponse } from "./utils/responseHandler";
+
+// Error handling
 export { 
   ApiError, 
   BadRequestError, 
@@ -9,22 +16,19 @@ export {
   NotFoundError, 
   ConflictError, 
   ValidationError, 
-  InternalServerError,
+  InternalServerError
+} from "./utils/errors";
+
+export { 
   errorHandler,
   asyncHandler 
-} from "./error";
-export { 
-  Controller, 
-  Get, 
-  Post, 
-  Put, 
-  Delete, 
-  Patch, 
-  Use, 
-  Validate,
-  getRouteMetadata,
-  clearRouteMetadata 
-} from "./decorators";
-export { BaseController } from "./baseController";
-export { RouteRegistry, registerRoute } from "./router";
-export * from "./controllers"; 
+} from "./middleware/errorHandler";
+
+// Decorators
+export { Controller, Get, Post, Put, Delete, Patch } from "./decorators";
+
+// Middleware
+export { DuplicateRequestHandler } from "./middleware/duplicateRequestHandler";
+
+// Router
+export { default as router, RouteRegistry, registerRoute } from "./router"; 

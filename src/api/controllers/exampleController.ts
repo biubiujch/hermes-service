@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { Controller, Get, Post, Put, Delete } from "../decorators";
 import { BaseController } from "../baseController";
-import { asyncHandler } from "../error";
+import { asyncHandler } from "../middleware/errorHandler";
 
 interface ExampleData {
   id: number;

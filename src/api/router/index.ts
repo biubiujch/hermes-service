@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { logger } from "../../utils/logger";
 import { getRouteMetadata } from "../decorators";
-import { asyncHandler } from "../error";
+import { asyncHandler } from "../middleware/errorHandler";
 
 const router = Router();
 

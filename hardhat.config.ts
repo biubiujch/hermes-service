@@ -10,20 +10,21 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200,
-      },
-    },
+        runs: 200
+      }
+    }
   },
   networks: {
     hardhat: {
       chainId: 31337,
-      allowUnlimitedContractSize: true,
+      allowUnlimitedContractSize: true
     },
     localhost: {
       url: "http://127.0.0.1:8545",
       chainId: 31337,
-      allowUnlimitedContractSize: true,
-    },
+      allowUnlimitedContractSize: true
+      // accounts: [ process.env.PRIVATE_KEY || "" ], // 可以配置部署者私钥，后续可添加
+    }
     // 注释掉其他网络，仅用于本地开发测试
     // 生产环境需要取消注释并配置相应的环境变量
     // arbitrum: {
@@ -35,11 +36,11 @@ const config: HardhatUserConfig = {
     sources: "./contracts",
     tests: "./test",
     cache: "./cache",
-    artifacts: "./artifacts",
+    artifacts: "./artifacts"
   },
   mocha: {
-    timeout: 40000,
-  },
+    timeout: 40000
+  }
 };
 
 export default config;

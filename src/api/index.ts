@@ -2,7 +2,8 @@ import express, { NextFunction, Express } from "express";
 import { getEnvironmentVariable } from "../utils/envPaser";
 import { logger } from "../utils/logger";
 import router, { RouteRegistry } from "./router";
-import { errorHandler } from "./error";
+import { errorHandler } from "./middleware/errorHandler";
+import { DuplicateRequestHandler } from "./middleware/duplicateRequestHandler";
 
 // 导入控制器
 import { ExampleController, WalletController } from "./controllers";
@@ -23,6 +24,15 @@ async function startAPI(): Promise<Express> {
     });
     next();
   });
+
+  // 重复请求处理中间件 - 全局应用
+  app.use(DuplicateRequestHandler.middleware());
+
+  // 或者只对特定路由应用
+  // app.use('/api/example', DuplicateRequestHandler.forRoutes(['/api/example']));
+  
+  // 或者只对特定方法应用
+  // app.use(DuplicateRequestHandler.forMethods(['POST', 'PUT', 'DELETE']));
 
   // 注册控制器
   RouteRegistry.registerControllers([
