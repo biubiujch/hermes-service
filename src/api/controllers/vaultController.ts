@@ -58,8 +58,8 @@ export class VaultController extends ContractController {
       }
 
       // 初始化合约实例
-      this.vault = this.createContract(this.vaultAddress, VAULT_ABI);
-      this.mockToken = this.createContract(this.mockTokenAddress, MOCK_TOKEN_ABI);
+      this.vault = await this.createContract(this.vaultAddress, VAULT_ABI);
+      this.mockToken = await this.createContract(this.mockTokenAddress, MOCK_TOKEN_ABI);
 
       console.log("Vault contracts initialized successfully");
     } catch (error) {

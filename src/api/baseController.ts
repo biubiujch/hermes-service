@@ -74,6 +74,7 @@ export abstract class BaseController {
 export abstract class ContractController extends BaseController {
   protected provider: ethers.JsonRpcProvider;
   protected signer: ethers.Signer | null = null;
+  private signerInitialized = false;
 
   constructor() {
     super();
@@ -99,15 +100,34 @@ export abstract class ContractController extends BaseController {
           console.warn("No private key configured and no accounts available");
         }
       }
+      this.signerInitialized = true;
     } catch (error) {
       console.error("Failed to initialize signer:", error);
+      this.signerInitialized = true; // 即使失败也要标记为已初始化
+    }
+  }
+
+  /**
+   * 等待签名者初始化完成
+   */
+  protected async waitForSigner(): Promise<void> {
+    if (!this.signerInitialized) {
+      await new Promise(resolve => {
+        const checkInterval = setInterval(() => {
+          if (this.signerInitialized) {
+            clearInterval(checkInterval);
+            resolve(undefined);
+          }
+        }, 100);
+      });
     }
   }
 
   /**
    * 创建合约实例
    */
-  protected createContract(address: string, abi: any[]): ethers.Contract {
+  protected async createContract(address: string, abi: any[]): Promise<ethers.Contract> {
+    await this.waitForSigner();
     return new ethers.Contract(address, abi, this.signer || this.provider);
   }
 

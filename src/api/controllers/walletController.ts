@@ -31,7 +31,7 @@ export class WalletController extends ContractController {
       const mockTokenAddress = appConfig.getMockTokenAddress();
       if (mockTokenAddress) {
         this.mockTokenAddress = mockTokenAddress;
-        this.mockToken = this.createContract(mockTokenAddress, MOCK_TOKEN_ABI);
+        this.mockToken = await this.createContract(mockTokenAddress, MOCK_TOKEN_ABI);
         console.log(`MockToken initialized with address: ${mockTokenAddress}`);
       } else {
         console.warn('MockToken address not configured - set MOCK_TOKEN_ADDRESS in .env file');
