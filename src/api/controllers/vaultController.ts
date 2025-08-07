@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { ethers } from "ethers";
 import { Controller, Get, Post, Put, Delete } from "../decorators";
 import { appConfig } from "../../utils/config";
-import { BaseController } from "../baseController";
+import { ContractController } from "../baseController";
 
 // Vault ABI - 包含所有方法
 const VAULT_ABI = [
@@ -35,9 +35,7 @@ const MOCK_TOKEN_ABI = [
 ];
 
 @Controller("/api/vault")
-export class VaultController extends BaseController {
-  private provider: ethers.JsonRpcProvider;
-  private signer: ethers.Signer | null = null;
+export class VaultController extends ContractController {
   private vault: ethers.Contract | null = null;
   private mockToken: ethers.Contract | null = null;
   private vaultAddress: string | null = null;
@@ -45,7 +43,6 @@ export class VaultController extends BaseController {
 
   constructor() {
     super();
-    this.provider = new ethers.JsonRpcProvider(appConfig.getLocalNodeUrl());
     this.initializeContracts();
   }
 
@@ -60,25 +57,9 @@ export class VaultController extends BaseController {
         return;
       }
 
-      // 获取私钥配置（用于发送交易）
-      const privateKey = appConfig.getFeeCollectorPrivateKey();
-      if (privateKey) {
-        this.signer = new ethers.Wallet(privateKey, this.provider);
-        console.log("Signer initialized with private key");
-      } else {
-        // 如果没有配置私钥，使用第一个账户作为默认 signer（仅用于测试）
-        const accounts = await this.provider.listAccounts();
-        if (accounts.length > 0) {
-          this.signer = accounts[0];
-          console.log("Using first account as signer for testing");
-        } else {
-          console.warn("No private key configured and no accounts available");
-        }
-      }
-
       // 初始化合约实例
-      this.vault = new ethers.Contract(this.vaultAddress, VAULT_ABI, this.signer || this.provider);
-      this.mockToken = new ethers.Contract(this.mockTokenAddress, MOCK_TOKEN_ABI, this.provider);
+      this.vault = this.createContract(this.vaultAddress, VAULT_ABI);
+      this.mockToken = this.createContract(this.mockTokenAddress, MOCK_TOKEN_ABI);
 
       console.log("Vault contracts initialized successfully");
     } catch (error) {
@@ -279,7 +260,13 @@ export class VaultController extends BaseController {
         tx = await this.vault.createPool(walletAddress, amountInWei, ethers.ZeroAddress, nonce, deadline, signature, { value: amountInWei });
       }
 
-      const receipt = await tx.wait();
+      // 设置交易超时
+      const receipt = await Promise.race([
+        tx.wait(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Transaction timeout')), 30000)
+        )
+      ]);
       
       // 查找 PoolCreated 事件
       for (const log of receipt.logs) {
@@ -309,7 +296,6 @@ export class VaultController extends BaseController {
       });
     } catch (error) {
       this.error(error as Error);
-      return;
     }
   }
 
@@ -365,7 +351,6 @@ export class VaultController extends BaseController {
       });
     } catch (error) {
       this.error(error as Error);
-      return;
     }
   }
 
@@ -424,7 +409,6 @@ export class VaultController extends BaseController {
       });
     } catch (error) {
       this.error(error as Error);
-      return;
     }
   }
 
@@ -515,7 +499,6 @@ export class VaultController extends BaseController {
       });
     } catch (error) {
       this.error(error as Error);
-      return;
     }
   }
 

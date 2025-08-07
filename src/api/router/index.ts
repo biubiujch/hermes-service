@@ -31,24 +31,21 @@ export class RouteRegistry {
         const method = route.method.toLowerCase();
         const handler = controller[route.propertyKey].bind(controller);
         
-        // 使用 asyncHandler 包装异步处理器
-        const wrappedHandler = asyncHandler(handler);
-        
         switch (method) {
           case 'get':
-            router.get(fullPath, ...(route.middleware || []), wrappedHandler);
+            router.get(fullPath, ...(route.middleware || []), handler);
             break;
           case 'post':
-            router.post(fullPath, ...(route.middleware || []), wrappedHandler);
+            router.post(fullPath, ...(route.middleware || []), handler);
             break;
           case 'put':
-            router.put(fullPath, ...(route.middleware || []), wrappedHandler);
+            router.put(fullPath, ...(route.middleware || []), handler);
             break;
           case 'delete':
-            router.delete(fullPath, ...(route.middleware || []), wrappedHandler);
+            router.delete(fullPath, ...(route.middleware || []), handler);
             break;
           case 'patch':
-            router.patch(fullPath, ...(route.middleware || []), wrappedHandler);
+            router.patch(fullPath, ...(route.middleware || []), handler);
             break;
           default:
             logger.error(`Unsupported HTTP method: ${method}`);
@@ -92,24 +89,21 @@ export function registerRoute(
 ): void {
   const methodLower = method.toLowerCase();
   
-  // 使用 asyncHandler 包装异步处理器
-  const wrappedHandler = asyncHandler(handler);
-  
   switch (methodLower) {
     case 'get':
-      router.get(path, ...middleware, wrappedHandler);
+      router.get(path, ...middleware, handler);
       break;
     case 'post':
-      router.post(path, ...middleware, wrappedHandler);
+      router.post(path, ...middleware, handler);
       break;
     case 'put':
-      router.put(path, ...middleware, wrappedHandler);
+      router.put(path, ...middleware, handler);
       break;
     case 'delete':
-      router.delete(path, ...middleware, wrappedHandler);
+      router.delete(path, ...middleware, handler);
       break;
     case 'patch':
-      router.patch(path, ...middleware, wrappedHandler);
+      router.patch(path, ...middleware, handler);
       break;
     default:
       logger.error(`Unsupported HTTP method: ${method}`);

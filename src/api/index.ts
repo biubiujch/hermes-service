@@ -16,19 +16,37 @@ async function startAPI(): Promise<Express> {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  // 请求超时中间件
+  app.use((req, res, next) => {
+    // 设置 30 秒超时
+    const timeout = setTimeout(() => {
+      if (!res.headersSent) {
+        res.status(408).json({
+          success: false,
+          error: "Request timeout",
+          timestamp: Date.now()
+        });
+      }
+    }, 30000);
+
+    // 清理超时定时器
+    res.on('finish', () => {
+      clearTimeout(timeout);
+    });
+
+    next();
+  });
+
   // 请求日志中间件
   app.use((req, res, next) => {
-    logger.info(`${req.method} ${req.url}`, {
-      ip: req.ip,
-      userAgent: req.get("User-Agent")
-    });
+    logger.info(`${req.method} ${req.url}`);
     next();
   });
 
   // 重复请求处理中间件 - 全局应用
   // app.use(DuplicateRequestHandler.middleware());
 
-  // 只对非 GET 请求应用防重复处理（推荐）
+  // 只对写操作应用防重复处理，使用更宽松的配置
   app.use(DuplicateRequestHandler.forMethods(['POST', 'PUT', 'DELETE', 'PATCH']));
   
   // 或者只对特定路由应用
@@ -48,12 +66,7 @@ async function startAPI(): Promise<Express> {
   app.use(router);
 
   // 404 处理
-  app.use((req, res, next) => {
-    // 检查响应是否已经发送
-    if (res.headersSent) {
-      return;
-    }
-    
+  app.use((req, res) => {
     res.status(404).json({
       success: false,
       error: "API endpoint not found",

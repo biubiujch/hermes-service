@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { ResponseHandler } from "./utils/responseHandler";
 import { asyncHandler } from "./middleware/errorHandler";
+import { ethers } from "ethers";
+import { appConfig } from "../utils/config";
 
 /**
  * 基础控制器类
@@ -31,30 +33,9 @@ export abstract class BaseController {
    * 错误响应
    */
   protected error(error: string | Error, statusCode?: number): void {
-    // 检查响应是否已经发送，避免重复发送响应
     if (!this.res.headersSent) {
       ResponseHandler.error(this.res, error, statusCode);
     }
-  }
-
-  /**
-   * 分页响应
-   */
-  protected paginated<T>(
-    data: T[], 
-    page: number, 
-    limit: number, 
-    total: number,
-    message?: string
-  ): void {
-    ResponseHandler.paginated(this.res, data, page, limit, total, message);
-  }
-
-  /**
-   * 获取查询参数
-   */
-  protected getQueryParam(key: string, defaultValue?: any): any {
-    return this.req.query[key] || defaultValue;
   }
 
   /**
@@ -65,6 +46,13 @@ export abstract class BaseController {
   }
 
   /**
+   * 获取查询参数
+   */
+  protected getQueryParam(key: string, defaultValue?: any): any {
+    return this.req.query[key] || defaultValue;
+  }
+
+  /**
    * 获取请求体
    */
   protected getBody<T = any>(): T {
@@ -72,32 +60,65 @@ export abstract class BaseController {
   }
 
   /**
-   * 获取请求头
+   * 分页响应
    */
-  protected getHeader(key: string): string | undefined {
-    return this.req.get(key);
+  protected paginated<T>(data: T[], page: number, limit: number, total: number, message?: string): void {
+    ResponseHandler.paginated(this.res, data, page, limit, total, message);
+  }
+}
+
+/**
+ * 合约控制器基类
+ * 提供通用的合约初始化功能
+ */
+export abstract class ContractController extends BaseController {
+  protected provider: ethers.JsonRpcProvider;
+  protected signer: ethers.Signer | null = null;
+
+  constructor() {
+    super();
+    this.provider = new ethers.JsonRpcProvider(appConfig.getLocalNodeUrl());
+    this.initializeSigner();
   }
 
   /**
-   * 异步方法包装器
+   * 初始化签名者
    */
-  protected async wrapAsync<T>(fn: () => Promise<T>): Promise<T> {
+  private async initializeSigner() {
     try {
-      return await fn();
+      const privateKey = appConfig.getFeeCollectorPrivateKey();
+      if (privateKey) {
+        this.signer = new ethers.Wallet(privateKey, this.provider);
+        console.log("Signer initialized with private key");
+      } else {
+        const accounts = await this.provider.listAccounts();
+        if (accounts.length > 0) {
+          this.signer = accounts[0];
+          console.log("Using first account as signer for testing");
+        } else {
+          console.warn("No private key configured and no accounts available");
+        }
+      }
     } catch (error) {
-      // 只记录错误，不发送响应，让上层处理
-      console.error('Error in wrapAsync:', error);
-      throw error;
+      console.error("Failed to initialize signer:", error);
     }
   }
 
   /**
-   * 创建异步处理器
+   * 创建合约实例
    */
-  protected createAsyncHandler(method: Function) {
-    return asyncHandler((req: Request, res: Response, next: NextFunction) => {
-      this.setContext(req, res, next);
-      return method.call(this, req, res, next);
-    });
+  protected createContract(address: string, abi: any[]): ethers.Contract {
+    return new ethers.Contract(address, abi, this.signer || this.provider);
+  }
+
+  /**
+   * 验证地址格式
+   */
+  protected validateAddress(address: string, paramName: string = "address"): boolean {
+    if (!address || !ethers.isAddress(address)) {
+      this.error(`Invalid ${paramName}`, 400);
+      return false;
+    }
+    return true;
   }
 } 

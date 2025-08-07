@@ -18,12 +18,15 @@ export function errorHandler(
   res: Response,
   next: NextFunction
 ): void {
+  // 检查响应是否已经发送
+  if (res.headersSent) {
+    return;
+  }
+
   // Log error
   logger.error(`Error occurred: ${error.message}`, {
     url: req.url,
     method: req.method,
-    ip: req.ip,
-    userAgent: req.get("User-Agent"),
     stack: error.stack
   });
 
@@ -33,7 +36,7 @@ export function errorHandler(
     return;
   }
 
-  // Handle other types of errors
+  // Handle common errors
   if (error.name === "ValidationError") {
     ResponseHandler.error(res, new ValidationError(error.message), 422);
     return;
@@ -41,16 +44,6 @@ export function errorHandler(
 
   if (error.name === "CastError") {
     ResponseHandler.error(res, new BadRequestError("Invalid ID format"), 400);
-    return;
-  }
-
-  if (error.name === "JsonWebTokenError") {
-    ResponseHandler.error(res, new UnauthorizedError("Invalid token"), 401);
-    return;
-  }
-
-  if (error.name === "TokenExpiredError") {
-    ResponseHandler.error(res, new UnauthorizedError("Token expired"), 401);
     return;
   }
 

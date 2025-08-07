@@ -45,8 +45,6 @@ export class ExampleController extends BaseController {
       this.success(results, `搜索到 ${results.length} 条结果`);
     } catch (error) {
       this.error(error as Error);
-      // 不要抛出错误，避免被错误处理中间件重复处理
-      return;
     }
   }
 
@@ -70,8 +68,6 @@ export class ExampleController extends BaseController {
       this.paginated(paginatedData, page, limit, this.data.length, "获取示例列表成功");
     } catch (error) {
       this.error(error as Error);
-      // 不要抛出错误，避免被错误处理中间件重复处理
-      return;
     }
   }
 
@@ -95,8 +91,6 @@ export class ExampleController extends BaseController {
       this.success(item, "Example data retrieved successfully");
     } catch (error) {
       this.error(error as Error);
-      // 不要抛出错误，避免被错误处理中间件重复处理
-      return;
     }
   }
 

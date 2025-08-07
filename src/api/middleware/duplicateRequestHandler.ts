@@ -11,8 +11,8 @@ interface PendingRequest {
  */
 export class DuplicateRequestHandler {
   private static pendingRequests = new Map<string, PendingRequest>();
-  private static readonly REQUEST_TIMEOUT = 2000; // 2 seconds for GET requests
-  private static readonly CLEANUP_INTERVAL = 10000; // 10 seconds
+  private static readonly REQUEST_TIMEOUT = 1000; // 1 second
+  private static readonly CLEANUP_INTERVAL = 5000; // 5 seconds
   private static cleanupInterval: NodeJS.Timeout | null = null;
 
   /**
@@ -30,21 +30,17 @@ export class DuplicateRequestHandler {
    * Generate a unique request key
    */
   private static generateRequestKey(req: Request): string {
-    const { method, url, path } = req;
-    const userId = req.headers['user-id'] || req.headers['authorization'] || 'anonymous';
+    const { method, path } = req;
     
-    // 对于 GET 请求，包含查询参数
-    let requestIdentifier = '';
+    // 简化请求键生成，只基于方法和路径
+    // 对于非 GET 请求，添加时间戳来避免误判
     if (method === 'GET') {
-      // 使用完整的 URL（包含查询参数）
-      requestIdentifier = url;
+      return `${method}:${path}`;
     } else {
-      // 对于非 GET 请求，包含请求体
-      const body = JSON.stringify(req.body);
-      requestIdentifier = `${path}:${body}`;
+      // 对于写操作，使用更宽松的键生成
+      const timestamp = Math.floor(Date.now() / 1000); // 1秒精度
+      return `${method}:${path}:${timestamp}`;
     }
-    
-    return `${method}:${requestIdentifier}:${userId}`;
   }
 
   /**
@@ -61,9 +57,7 @@ export class DuplicateRequestHandler {
       }
     }
     
-    if (cleanedCount > 0) {
-      console.log(`[DuplicateRequestHandler] Cleaned up ${cleanedCount} expired requests`);
-    }
+    // 静默清理，减少日志输出
   }
 
   /**
@@ -82,13 +76,7 @@ export class DuplicateRequestHandler {
         const pendingRequest = this.pendingRequests.get(requestKey)!;
         const timeSinceRequest = Date.now() - pendingRequest.timestamp;
         
-        console.log(`[DuplicateRequestHandler] Duplicate request detected:`, {
-          method: req.method,
-          url: req.url,
-          requestKey,
-          timeSinceRequest: `${timeSinceRequest}ms`,
-          pendingRequestId: pendingRequest.requestId
-        });
+        // 简化重复请求日志
         
         const response = {
           success: false,
@@ -106,23 +94,13 @@ export class DuplicateRequestHandler {
         requestId
       });
 
-      console.log(`[DuplicateRequestHandler] Processing request:`, {
-        method: req.method,
-        url: req.url,
-        requestKey,
-        requestId
-      });
+      // 简化处理日志
 
       // Remove from pending requests when response is sent
       const originalEnd = res.end;
       res.end = function(chunk?: any, encoding?: any) {
         DuplicateRequestHandler.pendingRequests.delete(requestKey);
-        console.log(`[DuplicateRequestHandler] Request completed:`, {
-          method: req.method,
-          url: req.url,
-          requestKey,
-          requestId
-        });
+        // 简化完成日志
         return originalEnd.call(this, chunk, encoding);
       };
 

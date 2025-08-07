@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { ethers } from 'ethers';
 import { Controller, Get, Post } from "../decorators";
-import { BaseController } from "../baseController";
+import { ContractController } from "../baseController";
 import { appConfig } from "../../utils/config";
 
 // MockToken ABI - 只包含需要的方法
@@ -16,15 +16,12 @@ const MOCK_TOKEN_ABI = [
  * 提供钱包相关的API接口
  */
 @Controller("/api/wallet")
-export class WalletController extends BaseController {
-  private provider: ethers.JsonRpcProvider;
+export class WalletController extends ContractController {
   private mockToken: ethers.Contract | null = null;
   private mockTokenAddress: string | null = null;
 
   constructor() {
     super();
-    // 连接到本地Hardhat节点
-    this.provider = new ethers.JsonRpcProvider(appConfig.getLocalNodeUrl());
     this.initializeMockToken();
   }
 
@@ -34,7 +31,7 @@ export class WalletController extends BaseController {
       const mockTokenAddress = appConfig.getMockTokenAddress();
       if (mockTokenAddress) {
         this.mockTokenAddress = mockTokenAddress;
-        this.mockToken = new ethers.Contract(mockTokenAddress, MOCK_TOKEN_ABI, this.provider);
+        this.mockToken = this.createContract(mockTokenAddress, MOCK_TOKEN_ABI);
         console.log(`MockToken initialized with address: ${mockTokenAddress}`);
       } else {
         console.warn('MockToken address not configured - set MOCK_TOKEN_ADDRESS in .env file');
@@ -59,8 +56,6 @@ export class WalletController extends BaseController {
       });
     } catch (error) {
       this.error(error as Error);
-      // 不要抛出错误，避免被错误处理中间件重复处理
-      return;
     }
   }
 
@@ -82,8 +77,6 @@ export class WalletController extends BaseController {
       });
     } catch (error) {
       this.error(error as Error);
-      // 不要抛出错误，避免被错误处理中间件重复处理
-      return;
     }
   }
 
