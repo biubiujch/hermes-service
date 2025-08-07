@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { ethers } from "ethers";
-import { Get, Post, Put, Delete } from "../decorators";
+import { Controller, Get, Post, Put, Delete } from "../decorators";
 import { appConfig } from "../../utils/config";
 import { BaseController } from "../baseController";
 
@@ -34,6 +34,7 @@ const MOCK_TOKEN_ABI = [
   "function transferFrom(address from, address to, uint256 amount) external returns (bool)"
 ];
 
+@Controller("/api/vault")
 export class VaultController extends BaseController {
   private provider: ethers.JsonRpcProvider;
   private vault: ethers.Contract | null = null;
@@ -49,13 +50,12 @@ export class VaultController extends BaseController {
 
   private async initializeContracts() {
     try {
-      // 从部署文件读取合约地址
-      const deploymentData = require("../../deployments/localhost.json");
-      this.vaultAddress = deploymentData.Vault;
-      this.mockTokenAddress = deploymentData.MockToken;
+      // 从配置中获取合约地址
+      this.vaultAddress = appConfig.getVaultAddress();
+      this.mockTokenAddress = appConfig.getMockTokenAddress();
 
       if (!this.vaultAddress || !this.mockTokenAddress) {
-        console.error("Contract addresses not found in deployment file");
+        console.error("Contract addresses not found in configuration - set VAULT_ADDRESS and MOCK_TOKEN_ADDRESS in .env file");
         return;
       }
 
