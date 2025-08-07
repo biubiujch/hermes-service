@@ -26,13 +26,16 @@ async function startAPI(): Promise<Express> {
   });
 
   // 重复请求处理中间件 - 全局应用
-  app.use(DuplicateRequestHandler.middleware());
+  // app.use(DuplicateRequestHandler.middleware());
 
-  // 或者只对特定路由应用
-  // app.use('/api/example', DuplicateRequestHandler.forRoutes(['/api/example']));
+  // 只对非 GET 请求应用防重复处理（推荐）
+  app.use(DuplicateRequestHandler.forMethods(['POST', 'PUT', 'DELETE', 'PATCH']));
   
-  // 或者只对特定方法应用
-  // app.use(DuplicateRequestHandler.forMethods(['POST', 'PUT', 'DELETE']));
+  // 或者只对特定路由应用
+  // app.use('/api/wallet', DuplicateRequestHandler.forRoutes(['/api/wallet']));
+  
+  // 或者只对 GET 请求应用（如果你确实需要）
+  // app.use(DuplicateRequestHandler.forGetRequests());
 
   // 注册控制器
   RouteRegistry.registerControllers([
