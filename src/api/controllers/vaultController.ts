@@ -37,6 +37,7 @@ const MOCK_TOKEN_ABI = [
 @Controller("/api/vault")
 export class VaultController extends BaseController {
   private provider: ethers.JsonRpcProvider;
+  private signer: ethers.Signer | null = null;
   private vault: ethers.Contract | null = null;
   private mockToken: ethers.Contract | null = null;
   private vaultAddress: string | null = null;
@@ -59,8 +60,24 @@ export class VaultController extends BaseController {
         return;
       }
 
+      // 获取私钥配置（用于发送交易）
+      const privateKey = appConfig.getFeeCollectorPrivateKey();
+      if (privateKey) {
+        this.signer = new ethers.Wallet(privateKey, this.provider);
+        console.log("Signer initialized with private key");
+      } else {
+        // 如果没有配置私钥，使用第一个账户作为默认 signer（仅用于测试）
+        const accounts = await this.provider.listAccounts();
+        if (accounts.length > 0) {
+          this.signer = accounts[0];
+          console.log("Using first account as signer for testing");
+        } else {
+          console.warn("No private key configured and no accounts available");
+        }
+      }
+
       // 初始化合约实例
-      this.vault = new ethers.Contract(this.vaultAddress, VAULT_ABI, this.provider);
+      this.vault = new ethers.Contract(this.vaultAddress, VAULT_ABI, this.signer || this.provider);
       this.mockToken = new ethers.Contract(this.mockTokenAddress, MOCK_TOKEN_ABI, this.provider);
 
       console.log("Vault contracts initialized successfully");
@@ -228,7 +245,7 @@ export class VaultController extends BaseController {
         return;
       }
 
-      let poolId: bigint;
+      let poolId: bigint | null = null;
       let tx: any;
 
       if (tokenAddress && tokenAddress !== ethers.ZeroAddress) {
@@ -256,17 +273,35 @@ export class VaultController extends BaseController {
 
         tx = await this.vault.createPool(walletAddress, amountInWei, tokenAddress, nonce, deadline, signature);
       } else {
-        // ETH创建资金池
+        // ETH创建资金池 - 使用 initialAmount 作为签名验证，但合约调用时传递 0
         const amountInWei = ethers.parseEther(initialAmount);
-        tx = await this.vault.createPool(walletAddress, 0, ethers.ZeroAddress, nonce, deadline, signature, { value: amountInWei });
+        // 注意：这里我们传递 initialAmount 而不是 0，因为签名是基于 initialAmount 生成的
+        tx = await this.vault.createPool(walletAddress, amountInWei, ethers.ZeroAddress, nonce, deadline, signature, { value: amountInWei });
       }
 
       const receipt = await tx.wait();
-      const event = this.vault.interface.parseLog(receipt.logs[0] as any);
-      poolId = event?.args[0];
+      
+      // 查找 PoolCreated 事件
+      for (const log of receipt.logs) {
+        try {
+          const event = this.vault.interface.parseLog(log as any);
+          if (event && event.name === 'PoolCreated') {
+            poolId = event.args[0];
+            break;
+          }
+        } catch (error) {
+          // 忽略无法解析的日志
+          continue;
+        }
+      }
+      
+      // 如果没有找到事件，记录警告
+      if (!poolId) {
+        console.warn("No PoolCreated event found in transaction receipt");
+      }
 
       this.success({
-        poolId: Number(poolId),
+        poolId: poolId ? Number(poolId) : null,
         walletAddress,
         initialAmount,
         transactionHash: tx.hash,
