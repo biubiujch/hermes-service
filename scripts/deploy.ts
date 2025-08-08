@@ -1,6 +1,6 @@
-// 使用 require 获取 hardhat 运行时，避免类型增强在脚本中导致的编译告警
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-import { ethers } from "hardhat";
+const hre = require("hardhat");
+const { ethers } = hre;
 import * as fs from 'fs';
 import * as path from 'path';
 import { updateEnvFromDeployment } from './update-env';
@@ -31,6 +31,14 @@ async function main() {
   const vaultAddress = await vault.getAddress();
   console.log("✅ Vault deployed to:", vaultAddress);
 
+  // 2.5 部署策略注册合约
+  console.log("\n📑 Deploying StrategyRegistry...");
+  const StrategyRegistry = await ethers.getContractFactory("StrategyRegistry");
+  const strategyRegistry = await StrategyRegistry.deploy(deployer.address);
+  await strategyRegistry.waitForDeployment();
+  const strategyRegistryAddress = await strategyRegistry.getAddress();
+  console.log("✅ StrategyRegistry deployed to:", strategyRegistryAddress);
+
   // 3. 配置资金池合约
   console.log("\n⚙️ Configuring Vault...");
   await vault.setTokenSupported(mockTokenAddress, true);
@@ -48,7 +56,8 @@ async function main() {
     feeCollector: feeCollector.address,
     contracts: {
       mockToken: mockTokenAddress,
-      vault: vaultAddress
+      vault: vaultAddress,
+      strategyRegistry: strategyRegistryAddress
     },
     timestamp: new Date().toISOString()
   };
@@ -62,6 +71,7 @@ async function main() {
   console.log("📋 Contract Addresses:");
   console.log("MockToken:", mockTokenAddress);
   console.log("Vault:", vaultAddress);
+  console.log("StrategyRegistry:", strategyRegistryAddress);
   console.log("Fee Collector:", feeCollector.address);
   console.log("=".repeat(50));
   console.log("🔧 Next steps:");
@@ -69,6 +79,7 @@ async function main() {
   console.log("2. Update your .env file with:");
   console.log(`   MOCK_TOKEN_ADDRESS=${mockTokenAddress}`);
   console.log(`   VAULT_ADDRESS=${vaultAddress}`);
+  console.log(`   STRATEGY_REGISTRY_ADDRESS=${strategyRegistryAddress}`);
   console.log(`   FEE_COLLECTOR_ADDRESS=${feeCollector.address}`);
   console.log("3. Run tests: pnpm run contract:test");
   console.log("4. Start API server: pnpm run dev");
@@ -77,6 +88,7 @@ async function main() {
   console.log("\n💡 Quick .env update commands:");
   console.log(`sed -i '' 's/MOCK_TOKEN_ADDRESS=.*/MOCK_TOKEN_ADDRESS=${mockTokenAddress}/' .env`);
   console.log(`sed -i '' 's/VAULT_ADDRESS=.*/VAULT_ADDRESS=${vaultAddress}/' .env`);
+  console.log(`sed -i '' 's/STRATEGY_REGISTRY_ADDRESS=.*/STRATEGY_REGISTRY_ADDRESS=${strategyRegistryAddress}/' .env`);
   console.log(`sed -i '' 's/FEE_COLLECTOR_ADDRESS=.*/FEE_COLLECTOR_ADDRESS=${feeCollector.address}/' .env`);
 
   // 8. 部署完成后自动更新 .env

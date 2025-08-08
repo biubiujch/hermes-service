@@ -39,7 +39,43 @@
 - `getUserPools(user)`: 获取用户资金池列表
 - `getPool(poolId)`: 获取资金池详情
 
-### 3. Membership.sol
+### 3. StrategyRegistry.sol
+策略配置注册与管理（参数化策略）。
+
+**设计原则：**
+- 仅存储关键索引与状态：`owner`、`symbol`、`paramsHash`、`isActive`、时间戳
+- 完整参数与自定义指标通过链下存储（如 JSON），上链仅存 `paramsHash` 与在事件里携带 `metadataURI`
+- 所有写操作支持 EIP-712 + `nonce` + `deadline`，并允许本地直接调用（空签名）
+
+**核心方法：**
+- `registerStrategy(wallet, paramsHash, symbol, nonce, deadline, sig, metadataURI)`
+- `updateStrategy(wallet, strategyId, newParamsHash, nonce, deadline, sig, metadataURI)`
+- `setStrategyActive(wallet, strategyId, active, nonce, deadline, sig)`
+- `deleteStrategy(wallet, strategyId, nonce, deadline, sig)`
+- 只读：`getUserStrategies(user)`, `getStrategy(id)`, `getNonce(user)`, `getDomainSeparator()`
+
+**事件：**
+- `StrategyRegistered(id, owner, symbol, paramsHash, metadataURI)`
+- `StrategyUpdated(id, owner, paramsHash, metadataURI)`
+- `StrategyActivationChanged(id, owner, isActive)`
+- `StrategyDeleted(id, owner)`
+
+**参数化策略建议（链下 JSON 示例）：**
+```json
+{
+  "symbol": "ETH",
+  "leverage": 5,
+  "takeProfit": 0.03,
+  "stopLoss": 0.01,
+  "amountLimit": "1000 USDT",
+  "maxDrawdown": 0.1,
+  "freq": "1h",
+  "riskLevel": "medium",
+  "indicators": { "ema": [20, 50], "rsi": 14 }
+}
+```
+
+### 4. Membership.sol
 会员订阅与权限管理合约。
 
 **功能特性：**

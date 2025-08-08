@@ -52,7 +52,7 @@ export class RouteRegistry {
             return;
         }
         
-        logger.info(`Registered route: ${method.toUpperCase()} ${fullPath}`);
+        console.log(`Registered route: ${method.toUpperCase()} ${fullPath}`);
       });
   }
 
@@ -110,7 +110,7 @@ export function registerRoute(
       return;
   }
   
-  logger.info(`Registered route: ${method.toUpperCase()} ${path}`);
+  console.log(`Registered route: ${method.toUpperCase()} ${path}`);
 }
 
 export default router;

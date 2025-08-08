@@ -62,6 +62,12 @@ export function updateEnvFromDeployment() {
       console.log(`✅ ${result.action === 'updated' ? 'Updated' : 'Inserted'} MEMBERSHIP_ADDRESS: ${contracts.membership}`);
     }
 
+    if (contracts && contracts.strategyRegistry) {
+      const result = upsertEnvVar(envContent, 'STRATEGY_REGISTRY_ADDRESS', String(contracts.strategyRegistry));
+      envContent = result.updated;
+      console.log(`✅ ${result.action === 'updated' ? 'Updated' : 'Inserted'} STRATEGY_REGISTRY_ADDRESS: ${contracts.strategyRegistry}`);
+    }
+
     // 可选：从部署文件同步 feeCollector（如果存在）
     if (deployment.feeCollector) {
       const result = upsertEnvVar(envContent, 'FEE_COLLECTOR_ADDRESS', String(deployment.feeCollector));

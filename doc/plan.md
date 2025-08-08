@@ -60,7 +60,7 @@ export class ExampleController extends BaseController {
 
 ## step3 资金池功能准备
 
-1. 资金池合约（为后续策略、交易调用作准备）
+1. 资金池合约（为后续策略、交易调用作准备）✅
 
 - 用户可以创建多个资金池（创建数量要可配置，整个合约资金池总数不必限制），只能管理自己的资金池
 - 删除资金池（资金自动转出，需要考虑资金过少不够支付gas 和手续费的边缘情况）
@@ -69,18 +69,36 @@ export class ExampleController extends BaseController {
 - 分配/取出资金
 - 手续费收集（收集地址设置要安全方便）
 
-2. 资金池测试
+2. 资金池测试 ✅
 
 - 单独的测试文件，通过package.json 配置的 contract:test 命令统一测试
 
-3. 资金池部署
+3. 资金池部署 ✅
 
 - 基于现有的部署脚本，合并一起部署
 
-4. 基于现有的API架构，提供资金池相关API提供
+4. 基于现有的API架构，提供资金池相关API提供 ✅
 
 - 创建资金池
 - 分配资金
 - 取出资金
 - 删除资金池
 - 合并资金池
+
+## step4 策略功能
+
+1.  策略合约
+
+- 策略配置是参数化的（如：symbol、leverage、takeProfit、stopLoss、amountLimit、maxDrawdown、freq、riskLevel 等），同一个策略逻辑可被不同参数驱动，前端只传参数。
+
+- 用户在链上存储策略元数据（或在合约注册策略 ID 并签名参数后链下存储，执行前由 Executor 校验/读取）。
+
+- 策略执行由离线 Executor（Node）来做，Executor 会读取链上/DB 的策略、获取市场行情、做判断并调用合约执行或调用用户的代理合约（StrategyProxy）。
+
+- 签名（EIP-712）+ nonce/timestamp 用来防止重放与保证用户授权更安全。
+
+- 合约侧尽量只存关键配置/索引/状态，避免频繁写大量数据以节省 gas。
+
+- 如果用户想自定义配置触发策略判断的指标等该如何做？
+
+2. 策略 API 提供 
