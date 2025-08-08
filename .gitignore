@@ -30,3 +30,7 @@ ignition/deployments/chain-31337
 
 # Hardhat node log file
 .hardhat-node.log
+
+# cache 
+storage
+storage_backup

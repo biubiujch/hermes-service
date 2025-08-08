@@ -6,7 +6,7 @@ import { errorHandler } from "./middleware/errorHandler";
 import { DuplicateRequestHandler } from "./middleware/duplicateRequestHandler";
 
 // 导入控制器
-import { ExampleController, WalletController, VaultController } from "./controllers";
+import { ExampleController, WalletController, VaultController, StrategyController } from "./controllers";
 
 async function startAPI(): Promise<Express> {
   const app = express();
@@ -59,7 +59,8 @@ async function startAPI(): Promise<Express> {
   RouteRegistry.registerControllers([
     ExampleController,
     WalletController,
-    VaultController
+    VaultController,
+    StrategyController
   ]);
 
   // 路由

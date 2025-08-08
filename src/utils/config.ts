@@ -40,6 +40,7 @@ export class AppConfig {
   private mockTokenAddress: string | null = null;
   private vaultAddress: string | null = null;
   private membershipAddress: string | null = null;
+  private strategyRegistryAddress: string | null = null;
 
   // 支持的网络列表
   private networks: NetworkConfig[] = [
@@ -138,6 +139,7 @@ export class AppConfig {
     this.mockTokenAddress = getEnvironmentVariable('MOCK_TOKEN_ADDRESS') || null;
     this.vaultAddress = getEnvironmentVariable('VAULT_ADDRESS') || null;
     this.membershipAddress = getEnvironmentVariable('MEMBERSHIP_ADDRESS') || null;
+    this.strategyRegistryAddress = getEnvironmentVariable('STRATEGY_REGISTRY_ADDRESS') || null;
   }
 
   /**
@@ -296,6 +298,20 @@ export class AppConfig {
   }
 
   /**
+   * 获取StrategyRegistry地址
+   */
+  public getStrategyRegistryAddress(): string | null {
+    return this.strategyRegistryAddress;
+  }
+
+  /**
+   * 设置StrategyRegistry地址
+   */
+  public setStrategyRegistryAddress(address: string): void {
+    this.strategyRegistryAddress = address;
+  }
+
+  /**
    * 检查手续费收集账户是否已配置
    */
   public isFeeCollectorConfigured(): boolean {
@@ -321,7 +337,8 @@ export class AppConfig {
       contracts: {
         mockToken: this.mockTokenAddress,
         vault: this.vaultAddress,
-        membership: this.membershipAddress
+        membership: this.membershipAddress,
+        strategyRegistry: this.strategyRegistryAddress
       },
       supportedNetworks: this.networks.map(network => ({
         id: network.id,
