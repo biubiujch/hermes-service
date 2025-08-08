@@ -1,6 +1,9 @@
+// 使用 require 获取 hardhat 运行时，避免类型增强在脚本中导致的编译告警
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 import { ethers } from "hardhat";
 import * as fs from 'fs';
 import * as path from 'path';
+import { updateEnvFromDeployment } from './update-env';
 
 async function main() {
   console.log("🚀 Starting contract deployment...");
@@ -75,6 +78,15 @@ async function main() {
   console.log(`sed -i '' 's/MOCK_TOKEN_ADDRESS=.*/MOCK_TOKEN_ADDRESS=${mockTokenAddress}/' .env`);
   console.log(`sed -i '' 's/VAULT_ADDRESS=.*/VAULT_ADDRESS=${vaultAddress}/' .env`);
   console.log(`sed -i '' 's/FEE_COLLECTOR_ADDRESS=.*/FEE_COLLECTOR_ADDRESS=${feeCollector.address}/' .env`);
+
+  // 8. 部署完成后自动更新 .env
+  console.log("\n🛠  Auto updating .env from deployment info...");
+  try {
+    updateEnvFromDeployment();
+    console.log('✅ .env has been updated automatically.');
+  } catch (e) {
+    console.log('⚠️  Failed to auto update .env, you can run: pnpm -s update-env update');
+  }
 }
 
 main()
