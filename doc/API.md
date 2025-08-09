@@ -358,9 +358,71 @@ interface ApiResponse<T = any> {
   - `strategyId`: Strategy ID
 - **Response**: Single strategy with parameters
 
+#### Compute Strategy Hash
+- **POST** `/api/strategy/compute-hash`
+- **Description**: Get computed hash for strategy parameters (for frontend signing)
+- **Request Body**:
+```json
+{
+  "walletAddress": "0x...",
+  "params": {
+    "symbol": "ETH",
+    "leverage": 3,
+    "takeProfit": 0.05,
+    "stopLoss": 0.02,
+    "amountLimit": "1000 USDT",
+    "maxDrawdown": 0.1,
+    "freq": "1h",
+    "riskLevel": "medium"
+  },
+  "symbol": "ETH",
+  "nonce": 0,
+  "deadline": 1234567890
+}
+```
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "walletAddress": "0x...",
+    "paramsHash": "0x1234567890abcdef...",
+    "symbolBytes32": "0x4554480000000000000000000000000000000000000000000000000000000000",
+    "domain": {
+      "name": "Hermora Strategy",
+      "version": "1",
+      "chainId": 31337,
+      "verifyingContract": "0x..."
+    },
+    "types": {
+      "CreateStrategy": [
+        { "name": "walletAddress", "type": "address" },
+        { "name": "paramsHash", "type": "bytes32" },
+        { "name": "symbol", "type": "bytes32" },
+        { "name": "nonce", "type": "uint256" },
+        { "name": "deadline", "type": "uint256" }
+      ]
+    },
+    "message": {
+      "walletAddress": "0x...",
+      "paramsHash": "0x1234567890abcdef...",
+      "symbol": "0x4554480000000000000000000000000000000000000000000000000000000000",
+      "nonce": 0,
+      "deadline": 1234567890
+    },
+    "signatureData": {
+      "domain": { ... },
+      "types": { ... },
+      "primaryType": "CreateStrategy",
+      "message": { ... }
+    }
+  }
+}
+```
+
 #### Register Strategy
 - **POST** `/api/strategy/register`
-- **Description**: Register new strategy (requires EIP-712 signature)
+- **Description**: Register new strategy (requires EIP-712 signature and backend-computed hash)
 - **Request Body**:
 ```json
 {
@@ -378,7 +440,21 @@ interface ApiResponse<T = any> {
   "symbol": "ETH",
   "nonce": 0,
   "deadline": 1234567890,
-  "signature": "0x..."
+  "signature": "0x...",
+  "paramsHash": "0x1234567890abcdef...", // 必需：后端计算的哈希值
+  "symbolBytes32": "0x4554480000000000000000000000000000000000000000000000000000000000" // 可选：后端计算的符号字节
+}
+```
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "strategyId": 1,
+    "paramsHash": "0x1234567890abcdef...",
+    "transactionHash": "0xabcdef1234567890...",
+    "metadataURI": "ipfs://strategies/0x1234567890abcdef..."
+  }
 }
 ```
 
@@ -386,7 +462,38 @@ interface ApiResponse<T = any> {
 - **PUT** `/api/strategy/:strategyId`
 - **Path Parameters**:
   - `strategyId`: Strategy ID
-- **Request Body**: Same as register but without symbol field
+- **Request Body**:
+```json
+{
+  "walletAddress": "0x...",
+  "params": {
+    "symbol": "ETH",
+    "leverage": 5,
+    "takeProfit": 0.08,
+    "stopLoss": 0.03,
+    "amountLimit": "2000 USDT",
+    "maxDrawdown": 0.15,
+    "freq": "4h",
+    "riskLevel": "high"
+  },
+  "nonce": 1,
+  "deadline": 1234567890,
+  "signature": "0x...",
+  "paramsHash": "0x1234567890abcdef..." // 必需：后端计算的哈希值
+}
+```
+- **Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "strategyId": 1,
+    "newParamsHash": "0x1234567890abcdef...",
+    "transactionHash": "0xabcdef1234567890...",
+    "metadataURI": "ipfs://strategies/0x1234567890abcdef..."
+  }
+}
+```
 
 #### Set Strategy Active Status
 - **PUT** `/api/strategy/:strategyId/active`
@@ -539,7 +646,75 @@ const types = {
 
 ## Frontend Integration Example
 
-### Signature Flow
+### Strategy Registration Flow (Recommended)
+```typescript
+import { ethers } from 'ethers';
+
+async function registerStrategy(walletAddress: string, params: StrategyParams, symbol: string) {
+  // 1. Get nonce
+  const nonceResponse = await fetch(`/api/strategy/nonce/${walletAddress}`);
+  const { data: { nonce } } = await nonceResponse.json();
+
+  // 2. Set deadline
+  const deadline = Math.floor(Date.now() / 1000) + 3600; // 1小时后过期
+
+  // 3. Get computed hash and signature data from backend
+  const hashResponse = await fetch('/api/strategy/compute-hash', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      walletAddress,
+      params,
+      symbol,
+      nonce,
+      deadline
+    })
+  });
+  
+  const { data: { paramsHash, symbolBytes32, signatureData } } = await hashResponse.json();
+
+  // 4. Sign the message using backend-provided data
+  const signature = await window.ethereum.request({
+    method: 'eth_signTypedData_v4',
+    params: [walletAddress, JSON.stringify(signatureData)]
+  });
+
+  // 5. Register strategy with backend-computed hash
+  const response = await fetch('/api/strategy/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      walletAddress,
+      params,
+      symbol,
+      nonce,
+      deadline,
+      signature,
+      paramsHash, // 必需：后端计算的哈希值
+      symbolBytes32 // 可选：后端计算的符号字节
+    })
+  });
+
+  const result = await response.json();
+  return result;
+}
+
+// 使用示例
+const strategyParams = {
+  symbol: "ETH",
+  leverage: 3,
+  takeProfit: 0.05,
+  stopLoss: 0.02,
+  amountLimit: "1000 USDT",
+  maxDrawdown: 0.1,
+  freq: "1h",
+  riskLevel: "medium"
+};
+
+const result = await registerStrategy("0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6", strategyParams, "ETH");
+```
+
+### Legacy Signature Flow (Not Recommended)
 ```typescript
 import { ethers } from 'ethers';
 
@@ -591,6 +766,8 @@ const response = await fetch('/api/vault/pools', {
 - `InsufficientBalance()` - Insufficient balance
 - `StrategyNotFound()` - Strategy not found
 - `StrategyNotOwned()` - Strategy not owned by user
+- `Params hash mismatch` - Frontend provided hash doesn't match backend computed hash
+- `Symbol bytes mismatch` - Frontend provided symbol bytes don't match backend computed bytes
 
 ### Error Response Format
 ```json
@@ -622,6 +799,7 @@ const response = await fetch('/api/vault/pools', {
 4. **Memory Caching**: Strategy parameters cached in memory for fast access
 5. **Async File Operations**: Non-blocking file I/O for strategy storage
 6. **Batch Processing**: Write operations batched for better performance
+7. **Backend Hash Computation**: Centralized hash computation prevents frontend-backend inconsistencies
 
 ## Storage Architecture
 
@@ -631,3 +809,22 @@ const response = await fetch('/api/vault/pools', {
 - **Content-addressed**: Files named by parameter hash for integrity
 - **Dual backup**: Main storage + backup storage directories
 - **IPFS ready**: Prepared for future web3.storage integration
+- **Hash Consistency**: Backend-computed hashes ensure frontend-backend consistency
+
+## Important Notes
+
+### Strategy Registration Workflow
+The strategy registration process has been updated to prevent frontend-backend hash computation inconsistencies:
+
+1. **Frontend calls** `/api/strategy/compute-hash` to get backend-computed hash
+2. **Frontend signs** using the backend-provided hash and signature data
+3. **Frontend submits** registration with the backend-computed hash
+4. **Backend verifies** hash consistency before processing
+
+This approach ensures:
+- ✅ Consistent hash computation across all clients
+- ✅ Reduced frontend complexity
+- ✅ Better error handling and debugging
+- ✅ Enhanced security through hash verification
+
+For detailed implementation, see `doc/STRATEGY_REGISTRATION.md`

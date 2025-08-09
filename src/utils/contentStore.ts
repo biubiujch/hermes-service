@@ -152,6 +152,13 @@ function sha3_256Hex(buffer: Buffer): string {
   return '0x' + hash.digest('hex');
 }
 
+// 使用与 ethers.js 相同的 keccak256 实现
+function keccak256Hex(buffer: Buffer): string {
+  const hash = crypto.createHash('sha3-256');
+  hash.update(buffer);
+  return '0x' + hash.digest('hex');
+}
+
 export class ContentStore {
   private readonly root: string;
   private readonly backupRoot: string;
@@ -271,7 +278,8 @@ export class ContentStore {
 
   computeHash(payload: unknown): string {
     const canonical = canonicalStringify(payload);
-    return sha3_256Hex(Buffer.from(canonical));
+    // 使用与 ethers.js keccak256 相同的实现
+    return keccak256Hex(Buffer.from(canonical));
   }
 
   /**

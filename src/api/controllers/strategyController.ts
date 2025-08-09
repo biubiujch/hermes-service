@@ -282,9 +282,11 @@ export class StrategyController extends ContractController {
         nonce: number;
         deadline: number;
         signature: string;
+        paramsHash: string; // 必需：后端计算的哈希值
+        symbolBytes32?: string; // 可选：后端计算的符号字节
       }>();
 
-      const { walletAddress, params, symbol, nonce, deadline, signature } = body;
+      const { walletAddress, params, symbol, nonce, deadline, signature, paramsHash: providedHash, symbolBytes32: providedSymbolBytes } = body;
 
       // 验证参数
       if (!this.validateAddress(walletAddress)) {
@@ -292,19 +294,35 @@ export class StrategyController extends ContractController {
         return;
       }
 
-      if (!params || !symbol) {
+      if (!params || !symbol || !providedHash) {
         this.error("Missing required parameters", 400);
         return;
       }
 
-      // 计算参数哈希
-      const paramsHash = contentStore.computeHash(params);
+      // 后端重新计算参数哈希进行验证
+      const computedParamsHash = contentStore.computeHash(params);
+      const computedSymbolBytes32 = ethers.encodeBytes32String(symbol);
+      
+      // 验证哈希一致性
+      if (providedHash.toLowerCase() !== computedParamsHash.toLowerCase()) {
+        this.error("Params hash mismatch. Please use /api/strategy/compute-hash to get the correct hash", 400);
+        return;
+      }
+
+      // 验证符号字节一致性（如果提供）
+      if (providedSymbolBytes && providedSymbolBytes.toLowerCase() !== computedSymbolBytes32.toLowerCase()) {
+        this.error("Symbol bytes mismatch", 400);
+        return;
+      }
+
+      // 使用验证过的哈希值
+      const paramsHash = computedParamsHash;
+      const symbolBytes32 = computedSymbolBytes32;
       
       // 存储策略参数到本地（只存储参数，不存储元数据）
       contentStore.put('strategies', params);
 
       // 调用合约注册策略
-      const symbolBytes32 = ethers.encodeBytes32String(symbol);
       const metadataURI = `ipfs://strategies/${paramsHash}`; // 预留 IPFS URI
 
       const tx = await this.strategyRegistry.registerStrategy(
@@ -562,10 +580,11 @@ export class StrategyController extends ContractController {
       const symbolBytes32 = ethers.encodeBytes32String(symbol);
 
       // 构建 EIP-712 消息
+      const network = await this.provider.getNetwork();
       const domain = {
         name: "Hermora Strategy",
         version: "1",
-        chainId: await this.provider.getNetwork().then(n => n.chainId),
+        chainId: Number(network.chainId), // 确保转换为 number 类型
         verifyingContract: this.strategyRegistryAddress
       };
 
@@ -596,6 +615,99 @@ export class StrategyController extends ContractController {
         isValid: recoveredAddress.toLowerCase() === walletAddress.toLowerCase(),
         paramsHash,
         symbolBytes32
+      });
+    } catch (error) {
+      this.error(error as Error);
+    }
+  }
+
+  /**
+   * 获取策略参数哈希（用于前端签名）
+   * POST /api/strategy/compute-hash
+   */
+  @Post("/compute-hash")
+  async computeParamsHash(req: Request, res: Response, next: NextFunction) {
+    this.setContext(req, res, next);
+
+    try {
+      if (!this.strategyRegistry) {
+        this.error("StrategyRegistry contract not initialized", 500);
+        return;
+      }
+
+      const body = this.getBody<{
+        walletAddress: string;
+        params: StrategyParams;
+        symbol: string;
+        nonce: number;
+        deadline: number;
+      }>();
+
+      const { walletAddress, params, symbol, nonce, deadline } = body;
+
+      // 验证参数
+      if (!this.validateAddress(walletAddress)) {
+        this.error("Invalid wallet address", 400);
+        return;
+      }
+
+      if (!params || !symbol) {
+        this.error("Missing required parameters", 400);
+        return;
+      }
+
+      // 后端计算参数哈希（确保一致性）
+      const paramsHash = contentStore.computeHash(params);
+      const symbolBytes32 = ethers.encodeBytes32String(symbol);
+
+      // 构建 EIP-712 消息
+      const network = await this.provider.getNetwork();
+      const domain = {
+        name: "Hermora Strategy",
+        version: "1",
+        chainId: Number(network.chainId), // 确保转换为 number 类型
+        verifyingContract: this.strategyRegistryAddress
+      };
+
+      const types = {
+        CreateStrategy: [
+          { name: "walletAddress", type: "address" },
+          { name: "paramsHash", type: "bytes32" },
+          { name: "symbol", type: "bytes32" },
+          { name: "nonce", type: "uint256" },
+          { name: "deadline", type: "uint256" }
+        ]
+      };
+
+      const message = {
+        walletAddress,
+        paramsHash,
+        symbol: symbolBytes32,
+        nonce,
+        deadline
+      };
+
+      this.success({
+        walletAddress,
+        paramsHash,
+        symbolBytes32,
+        domain,
+        types,
+        message,
+        // 提供完整的签名数据供前端使用
+        signatureData: {
+          domain,
+          types,
+          primaryType: 'CreateStrategy',
+          message
+        },
+        // 提供用于验证的完整数据
+        verificationData: {
+          paramsHash,
+          symbolBytes32,
+          nonce,
+          deadline
+        }
       });
     } catch (error) {
       this.error(error as Error);
